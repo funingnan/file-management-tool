@@ -43,6 +43,11 @@ func (db *DB) Close() error {
 	return db.conn.Close()
 }
 
+// Exec 执行 SQL 语句
+func (db *DB) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return db.conn.Exec(query, args...)
+}
+
 // migrate 创建/更新表结构
 func (db *DB) migrate() error {
 	// 先建基础表

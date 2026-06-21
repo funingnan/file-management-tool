@@ -368,6 +368,15 @@ async function saveSettings() {
 // 版本历史数据
 const VERSION_HISTORY = [
     {
+        version: 'v0.1.10',
+        date: '2026-06-22',
+        changes: [
+            '扫描和选择路径按钮操作时保持固定不变，不再显示"扫描中..."',
+            '选择路径后提示文字简化为"已完成加载"',
+            '选择路径后图标不再被覆盖为旧emoji',
+        ]
+    },
+    {
         version: 'v0.1.9',
         date: '2026-06-22',
         changes: [
@@ -495,14 +504,37 @@ function showSettingsModal() {
         `;
     });
 
+    // 数据管理内容
+    let dataHtml = '<div style="margin-bottom:16px;font-size:12px;color:#888">备份或恢复数据库文件。导入会替换当前所有数据，建议先导出备份。</div>';
+    dataHtml += `
+        <div style="display:flex;flex-direction:column;gap:12px">
+            <button id="btn-export-db" class="btn" style="width:100%;justify-content:flex-start;gap:8px;padding:12px 16px">
+                <img src="src/icons/export.svg" style="width:16px;height:16px" />
+                <div style="text-align:left">
+                    <div style="font-weight:500">导出数据库</div>
+                    <div style="font-size:11px;color:#888;margin-top:2px">将当前数据导出为 .db 文件</div>
+                </div>
+            </button>
+            <button id="btn-import-db" class="btn" style="width:100%;justify-content:flex-start;gap:8px;padding:12px 16px">
+                <img src="src/icons/import.svg" style="width:16px;height:16px" />
+                <div style="text-align:left">
+                    <div style="font-weight:500">导入数据库</div>
+                    <div style="font-size:11px;color:#888;margin-top:2px">从 .db 文件恢复数据（将替换当前数据）</div>
+                </div>
+            </button>
+        </div>
+    `;
+
     // 完整弹窗：左侧导航 + 右侧内容
     const html = `
         <div class="settings-sidebar">
             <div class="settings-sidebar-item active" data-tab="filetypes">文件类型</div>
+            <div class="settings-sidebar-item" data-tab="data">数据管理</div>
             <div class="settings-sidebar-item" data-tab="version">版本信息</div>
         </div>
         <div class="settings-body">
             <div class="settings-section active" data-section="filetypes">${fileTypesHtml}</div>
+            <div class="settings-section" data-section="data">${dataHtml}</div>
             <div class="settings-section" data-section="version">${versionHtml}</div>
         </div>
     `;
@@ -537,6 +569,27 @@ function showSettingsModal() {
             renderFileTypeFilter();
             await refreshFileTypeCounts();
         });
+    });
+
+    // 数据导入导出
+    document.getElementById('btn-export-db').addEventListener('click', async () => {
+        try {
+            const path = await go.main.App.ExportDatabase();
+            if (path) showToast('已导出到: ' + path);
+        } catch (err) { showToast('导出失败: ' + err, 'error'); }
+    });
+    document.getElementById('btn-import-db').addEventListener('click', async () => {
+        try {
+            const imported = await go.main.App.ImportDatabase();
+            if (imported) {
+                showToast('导入成功，正在刷新...');
+                hideModal();
+                await refreshDocuments();
+                await refreshTags();
+                await refreshFileTypeCounts();
+                await updateDocCount();
+            }
+        } catch (err) { showToast('导入失败: ' + err, 'error'); }
     });
 
     // ESC键关闭设置窗口（不保存）
@@ -720,10 +773,6 @@ async function handleScan() {
     const folder = await go.main.App.SelectFolder();
     if (!folder) return;
 
-    const btn = document.getElementById('btn-scan');
-    btn.textContent = '扫描中...';
-    btn.disabled = true;
-
     try {
         const result = await go.main.App.ScanFolder(folder, state.settings.enabledTypes);
         await refreshDocuments();
@@ -736,9 +785,6 @@ async function handleScan() {
         showToast(msg);
     } catch (err) {
         showToast('扫描失败: ' + err, 'error');
-    } finally {
-        btn.textContent = '📂 扫描文件';
-        btn.disabled = false;
     }
 }
 
@@ -746,10 +792,6 @@ async function handleScan() {
 async function handleSelectFolder() {
     const folder = await go.main.App.SelectFolder();
     if (!folder) return;
-
-    const btn = document.getElementById('btn-select-folder');
-    btn.textContent = '扫描中...';
-    btn.disabled = true;
 
     try {
         // 先扫描索引该文件夹
@@ -759,8 +801,8 @@ async function handleSelectFolder() {
         state.filterMode = 'folder';
         state.fileTypeFilter = 'all';
         state.activeTagIds = [];
-        // 显示路径（调试用）
-        document.getElementById('folder-path-display').textContent = folder;
+        // 显示路径已选状态（圆点指示器）
+        document.getElementById('btn-select-folder').classList.add('has-path');
         // 刷新
         await refreshDocuments();
         await refreshTags();
@@ -771,12 +813,9 @@ async function handleSelectFolder() {
         const folderItem = document.querySelector('#file-type-filter .type-item[data-special="folder"]');
         if (folderItem) folderItem.classList.add('active');
         document.getElementById('btn-clear-filter').style.visibility = 'hidden';
-        showToast(`已加载文件夹：${folder}`);
+        showToast('已完成加载');
     } catch (err) {
         showToast('操作失败: ' + err, 'error');
-    } finally {
-        btn.textContent = '📁 选择路径';
-        btn.disabled = false;
     }
 }
 
@@ -962,11 +1001,11 @@ function renderTagList() {
         const isActive = state.filterMode === 'tagged' && state.activeTagIds.includes(tag.id);
         return `
             <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
-                <span class="tag-name"># ${escapeHtml(tag.name)}</span>
+                <span class="tag-name"><img src="src/icons/tag.svg" style="width:13px;height:13px;vertical-align:middle;margin-right:2px" /># ${escapeHtml(tag.name)}</span>
                 <span class="tag-count">${tag.count}</span>
                 <div class="tag-actions">
-                    <button class="tag-action-btn" data-action="rename" title="重命名"><img src="src/icons/edit.svg" style="width:14px;height:14px" /></button>
-                    <button class="tag-action-btn" data-action="delete" title="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
+                    <button class="tag-action-btn" data-action="rename" data-tip="重命名"><img src="src/icons/edit.svg" style="width:14px;height:14px" /></button>
+                    <button class="tag-action-btn" data-action="delete" data-tip="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
                 </div>
             </div>
         `;
@@ -1342,7 +1381,7 @@ function renderGraph(data, mode) {
         nodes: { shape: 'dot', borderWidth: 2, shadow: true },
         edges: { smooth: { enabled: true, type: 'continuous' }, scaling: { min: 1, max: 6 } },
         physics: { barnesHut: { gravitationalConstant: -3000, centralGravity: 0.1, springLength: 150, springConstant: 0.02, damping: 0.09 }, stabilization: { iterations: 200 } },
-        interaction: { hover: true, tooltipDelay: 200, zoomView: true, dragView: true },
+        interaction: { hover: true, tooltipDelay: 0, zoomView: true, dragView: true },
     });
     state.graphNetwork.on('doubleClick', (params) => {
         if (params.nodes.length > 0 && mode === 'document') { selectDocument(params.nodes[0]); switchView('list'); }

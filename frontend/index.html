@@ -12,7 +12,6 @@
         <div class="toolbar-left">
             <button id="btn-scan" class="btn" style="width:95px;display:flex;align-items:center;justify-content:center;gap:4px"><img src="src/icons/scan.svg" style="width:16px;height:16px" /> 扫描文件</button>
             <button id="btn-select-folder" class="btn" style="width:95px;display:flex;align-items:center;justify-content:center;gap:4px"><img src="src/icons/folder-open.svg" style="width:16px;height:16px" /> 选择路径</button>
-            <span id="folder-path-display" style="font-size:12px;color:#888;margin-left:4px"></span>
         </div>
         <div class="toolbar-center">
             <div class="search-box">
@@ -20,8 +19,8 @@
             </div>
         </div>
         <div class="toolbar-right">
-            <button id="btn-view-list" class="btn btn-icon active" title="列表视图"><img src="src/icons/list.svg" style="width:16px;height:16px" /></button>
-            <button id="btn-view-graph" class="btn btn-icon" title="网络图谱">🕸️</button>
+            <button id="btn-view-list" class="btn btn-icon active" data-tip="列表视图"><img src="src/icons/list.svg" style="width:16px;height:16px" /></button>
+            <button id="btn-view-graph" class="btn btn-icon" data-tip="网络图谱">🕸️</button>
             <span id="doc-count" class="doc-count"></span>
         </div>
     </header>
@@ -43,7 +42,7 @@
         <div id="tag-list"></div>
         <div class="sidebar-footer">
             <button id="btn-settings" class="btn-settings-link"><span class="settings-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.98l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z"/></svg></span> 设置</button>
-            <span class="version-label">v0.1.9</span>
+            <span class="version-label">v0.1.10</span>
         </div>
     </aside>
 
@@ -159,8 +158,8 @@
         <div id="tp-toast" class="tp-toast" style="display:none"></div>
     </div>
 
-    <!-- vis.js (CDN，离线使用需下载到本地) -->
-    <script src="https://unpkg.com/vis-network@9.1.6/standalone/umd/vis-network.min.js"></script>
+    <!-- vis.js (本地) -->
+    <script src="src/vis-network.min.js"></script>
     <script src="src/main.js"></script>
 </body>
 </html>

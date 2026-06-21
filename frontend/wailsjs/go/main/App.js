@@ -26,6 +26,10 @@ export function DeleteTag(arg1) {
   return window['go']['main']['App']['DeleteTag'](arg1);
 }
 
+export function ExportDatabase() {
+  return window['go']['main']['App']['ExportDatabase']();
+}
+
 export function GetAppMode() {
   return window['go']['main']['App']['GetAppMode']();
 }
@@ -64,6 +68,10 @@ export function GetTagGraph() {
 
 export function GetUntaggedCount(arg1) {
   return window['go']['main']['App']['GetUntaggedCount'](arg1);
+}
+
+export function ImportDatabase() {
+  return window['go']['main']['App']['ImportDatabase']();
 }
 
 export function ListDocuments(arg1, arg2, arg3, arg4) {

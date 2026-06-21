@@ -112,6 +112,21 @@ body {
 }
 .btn-primary:hover { background: var(--primary-hover); }
 
+/* 路径选择按钮：已选路径状态圆点指示器 */
+#btn-select-folder { position: relative; }
+#btn-select-folder.has-path::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 5px;
+    height: 5px;
+    background: var(--primary);
+    border: 1px solid #fff;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
 .btn-sm { padding: 3px 10px; font-size: 12px; }
 
 .btn-icon {
@@ -846,6 +861,29 @@ body {
 /* ========== 调试：显示点击区域 ========== */
 .debug-zones .click-toggle-zone { background: rgba(0, 120, 255, 0.15); }
 .debug-zones .file-info { background: rgba(255, 105, 180, 0.15); }
+
+/* ========== 即时 tooltip（所有 data-tip 元素） ========== */
+[data-tip] { position: relative; }
+[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0s;
+    z-index: 999;
+}
+[data-tip]:hover::after {
+    opacity: 1;
+}
 
 /* ========== 滚动条美化 ========== */
 ::-webkit-scrollbar { width: 6px; }

@@ -15,6 +15,8 @@ export function CloseTagPicker():Promise<void>;
 
 export function DeleteTag(arg1:number):Promise<void>;
 
+export function ExportDatabase():Promise<string>;
+
 export function GetAppMode():Promise<Record<string, any>>;
 
 export function GetDocument(arg1:number):Promise<database.DocumentDetail>;
@@ -34,6 +36,8 @@ export function GetSupportedTypes():Promise<Array<string>>;
 export function GetTagGraph():Promise<database.GraphData>;
 
 export function GetUntaggedCount(arg1:Array<string>):Promise<number>;
+
+export function ImportDatabase():Promise<boolean>;
 
 export function ListDocuments(arg1:Array<number>,arg2:string,arg3:boolean,arg4:Array<string>):Promise<Array<database.Document>>;
 

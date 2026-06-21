@@ -27,16 +27,18 @@ type App struct {
 	graph     *graph.GraphBuilder
 	mode      string // "app" (默认) 或 "tag-picker"
 	filePath  string // tag-picker 模式下的目标文件路径
+	dataDir   string // 数据目录路径
 }
 
 // NewApp 创建应用实例
-func NewApp(db *database.DB) *App {
+func NewApp(db *database.DB, dataDir string) *App {
 	return &App{
 		db:        db,
 		extractor: extractor.NewNoop(),
 		tagger:    tagger.New(db),
 		graph:     graph.New(db),
 		mode:      "app",
+		dataDir:   dataDir,
 	}
 }
 
@@ -375,6 +377,93 @@ func (a *App) GetDocumentGraph() (*database.GraphData, error) {
 // GetTagGraph 获取标签关联网络图数据
 func (a *App) GetTagGraph() (*database.GraphData, error) {
 	return a.graph.BuildTagGraph()
+}
+
+// ---------- 数据导入导出 ----------
+
+// ExportDatabase 导出数据库文件，返回保存路径
+func (a *App) ExportDatabase() (string, error) {
+	// WAL checkpoint 确保数据完整
+	_, err := a.db.Exec("PRAGMA wal_checkpoint(TRUNCATE)")
+	if err != nil {
+		return "", fmt.Errorf("数据库检查点失败: %w", err)
+	}
+
+	srcPath := filepath.Join(a.dataDir, "data.db")
+	savePath, err := wailsRuntime.SaveFileDialog(a.ctx, wailsRuntime.SaveDialogOptions{
+		Title:           "导出数据库",
+		DefaultFilename: "data.db",
+		Filters: []wailsRuntime.FileFilter{
+			{DisplayName: "数据库文件", Pattern: "*.db"},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if savePath == "" {
+		return "", nil // 用户取消
+	}
+
+	srcData, err := os.ReadFile(srcPath)
+	if err != nil {
+		return "", fmt.Errorf("读取数据库失败: %w", err)
+	}
+	if err := os.WriteFile(savePath, srcData, 0644); err != nil {
+		return "", fmt.Errorf("写入文件失败: %w", err)
+	}
+
+	return savePath, nil
+}
+
+// ImportDatabase 导入数据库文件，替换当前数据库。返回是否实际执行了导入
+func (a *App) ImportDatabase() (bool, error) {
+	openPath, err := wailsRuntime.OpenFileDialog(a.ctx, wailsRuntime.OpenDialogOptions{
+		Title: "选择要导入的数据库文件",
+		Filters: []wailsRuntime.FileFilter{
+			{DisplayName: "数据库文件", Pattern: "*.db"},
+		},
+	})
+	if err != nil {
+		return false, err
+	}
+	if openPath == "" {
+		return false, nil
+	}
+
+	// 验证文件是否为合法 SQLite
+	srcData, err := os.ReadFile(openPath)
+	if err != nil {
+		return false, fmt.Errorf("读取文件失败: %w", err)
+	}
+	if len(srcData) < 16 || string(srcData[:16])[:15] != "SQLite format 3" {
+		return false, fmt.Errorf("不是有效的数据库文件")
+	}
+
+	// 关闭现有连接
+	if err := a.db.Close(); err != nil {
+		return false, fmt.Errorf("关闭数据库失败: %w", err)
+	}
+
+	// 替换文件
+	dstPath := filepath.Join(a.dataDir, "data.db")
+	if err := os.WriteFile(dstPath, srcData, 0644); err != nil {
+		return false, fmt.Errorf("写入数据库失败: %w", err)
+	}
+
+	// 清理 WAL/SHM 文件
+	os.Remove(dstPath + "-wal")
+	os.Remove(dstPath + "-shm")
+
+	// 重新打开数据库
+	newDB, err := database.New(a.dataDir)
+	if err != nil {
+		return false, fmt.Errorf("重新打开数据库失败: %w", err)
+	}
+	a.db = newDB
+	a.tagger = tagger.New(newDB)
+	a.graph = graph.New(newDB)
+
+	return true, nil
 }
 
 // ---------- 工具函数 ----------

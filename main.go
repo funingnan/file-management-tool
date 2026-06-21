@@ -28,7 +28,7 @@ func main() {
 	defer db.Close()
 
 	// 创建应用
-	app := NewApp(db)
+	app := NewApp(db, dataDir)
 
 	// 启动 Wails
 	err = wails.Run(&options.App{
