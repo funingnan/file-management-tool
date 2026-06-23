@@ -472,8 +472,8 @@ function showSettingsModal() {
     const enabled = new Set(state.settings.enabledTypes);
 
     // 文件类型设置内容
-    let fileTypesHtml = '<div style="margin-bottom:12px;font-size:12px;color:#888">勾选要管理的文件类型，取消勾选后扫描和侧栏将不显示该类型</div>';
-    fileTypesHtml += '<div style="display:flex;flex-direction:column;gap:4px">';
+    let fileTypesHtml = '<div class="settings-hint">勾选要管理的文件类型，取消勾选后扫描和侧栏将不显示该类型</div>';
+    fileTypesHtml += '<div class="settings-filetypes-list">';
     allTypes.forEach(type => {
         const meta = FILE_TYPE_META[type];
         const checked = enabled.has(type) ? 'checked' : '';
@@ -481,17 +481,18 @@ function showSettingsModal() {
             ? `<span class="file-type-icon" style="background:${meta.bg};flex-shrink:0;display:flex;align-items:center;justify-content:center"><img src="${meta.iconSrc}" style="width:18px;height:18px;filter:brightness(0) invert(1)" /></span>`
             : `<span class="file-type-icon" style="background:${meta.bg};color:${meta.color};flex-shrink:0">${meta.icon}</span>`;
         fileTypesHtml += `
-            <label style="display:flex;align-items:center;gap:10px;padding:5px 12px;border:1px solid #eee;border-radius:6px;cursor:pointer">
-                <input type="checkbox" data-setting-type="${type}" ${checked} style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary)" />
+            <label class="settings-filetype-item">
+                <input type="checkbox" data-setting-type="${type}" ${checked} />
                 ${iconHtml}
-                <span style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta.name}</span>
+                <span class="settings-filetype-name">${meta.name}</span>
             </label>
         `;
     });
     fileTypesHtml += '</div>';
 
     // 版本信息内容
-    let versionHtml = '<div style="font-size:12px;color:#888;margin-bottom:12px">PDF 知识库 — 文件标签管理工具</div>';
+    let versionHtml = '<div class="settings-version-app">PDF 知识库 — 文件标签管理工具</div>';
+    versionHtml += '<div class="settings-version-hint">版本更新历史</div>';
     VERSION_HISTORY.forEach(v => {
         versionHtml += `
             <div class="version-entry">
@@ -505,21 +506,21 @@ function showSettingsModal() {
     });
 
     // 数据管理内容
-    let dataHtml = '<div style="margin-bottom:16px;font-size:12px;color:#888">备份或恢复数据库文件。导入会替换当前所有数据，建议先导出备份。</div>';
+    let dataHtml = '<div class="settings-hint">备份或恢复数据库文件。导入会替换当前所有数据，建议先导出备份。</div>';
     dataHtml += `
-        <div style="display:flex;flex-direction:column;gap:12px">
-            <button id="btn-export-db" class="btn" style="width:100%;justify-content:flex-start;gap:8px;padding:12px 16px">
-                <img src="src/icons/export.svg" style="width:16px;height:16px" />
-                <div style="text-align:left">
-                    <div style="font-weight:500">导出数据库</div>
-                    <div style="font-size:11px;color:#888;margin-top:2px">将当前数据导出为 .db 文件</div>
+        <div class="settings-data-buttons">
+            <button id="btn-export-db" class="settings-data-btn">
+                <img src="src/icons/export.svg" />
+                <div class="settings-data-btn-text">
+                    <div class="settings-data-btn-title">导出数据库</div>
+                    <div class="settings-data-btn-desc">将当前数据导出为 .db 文件</div>
                 </div>
             </button>
-            <button id="btn-import-db" class="btn" style="width:100%;justify-content:flex-start;gap:8px;padding:12px 16px">
-                <img src="src/icons/import.svg" style="width:16px;height:16px" />
-                <div style="text-align:left">
-                    <div style="font-weight:500">导入数据库</div>
-                    <div style="font-size:11px;color:#888;margin-top:2px">从 .db 文件恢复数据（将替换当前数据）</div>
+            <button id="btn-import-db" class="settings-data-btn">
+                <img src="src/icons/import.svg" />
+                <div class="settings-data-btn-text">
+                    <div class="settings-data-btn-title">导入数据库</div>
+                    <div class="settings-data-btn-desc">从 .db 文件恢复数据（将替换当前数据）</div>
                 </div>
             </button>
         </div>
