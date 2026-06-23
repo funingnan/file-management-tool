@@ -674,7 +674,6 @@ function bindEvents() {
     document.getElementById('search-input').addEventListener('input', debounce(handleSearch, 300));
     document.getElementById('btn-view-list').addEventListener('click', () => switchView('list'));
     document.getElementById('btn-view-graph').addEventListener('click', () => switchView('graph'));
-    document.getElementById('btn-back-list').addEventListener('click', () => switchView('list'));
     document.getElementById('btn-graph-doc').addEventListener('click', () => loadGraph('document'));
     document.getElementById('btn-graph-tag').addEventListener('click', () => loadGraph('tag'));
     document.getElementById('graph-search').addEventListener('input', debounce(handleGraphSearch, 300));
@@ -1338,7 +1337,7 @@ async function handleOpenDir() {
 // ========== 视图切换 ==========
 function switchView(mode) {
     state.viewMode = mode;
-    document.getElementById('main-content').style.display = mode === 'list' ? 'grid' : 'none';
+    document.getElementById('main-content').style.display = mode === 'list' ? 'flex' : 'none';
     document.getElementById('graph-view').style.display = mode === 'graph' ? 'flex' : 'none';
     document.getElementById('btn-view-list').classList.toggle('active', mode === 'list');
     document.getElementById('btn-view-graph').classList.toggle('active', mode === 'graph');

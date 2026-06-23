@@ -32,13 +32,17 @@ body {
 #toolbar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 8px 14px;
     background: var(--bg-white);
     border-bottom: 1px solid var(--border);
-    gap: 12px;
     flex-shrink: 0;
     position: relative;
+    contain: layout style;
+}
+
+.toolbar-left {
+    width: 198px;
+    min-width: 198px;
 }
 
 .toolbar-left, .toolbar-right {
@@ -51,6 +55,8 @@ body {
     width: 274px;
     min-width: 274px;
     justify-content: flex-end;
+    margin-left: auto;
+    will-change: transform;
 }
 
 .toolbar-center {
@@ -138,12 +144,21 @@ body {
 .btn-icon:hover { background: #e8e8e8; border-radius: 4px; }
 .btn-icon.active { background: #ddeeff; border-radius: 4px; }
 
+#app-wrapper {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    will-change: transform;
+}
+
 /* ========== 主内容三栏布局 ========== */
 #main-content {
     position: relative;
     display: flex;
     flex: 1;
     overflow: hidden;
+    will-change: transform;
 }
 
 #file-type-filter {
@@ -339,6 +354,7 @@ body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    contain: layout style;
 }
 
 .panel-header {
@@ -416,7 +432,6 @@ body {
     overflow: hidden;
     background: var(--bg);
     min-width: 0;
-    margin-right: 301px;
 }
 
 #file-list-header {
@@ -477,9 +492,9 @@ body {
 
 #file-list {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll;
     padding: 4px 4px 4px 10px;
-    scrollbar-gutter: stable;
+    contain: layout style;
 }
 
 .file-item {
@@ -593,18 +608,18 @@ body {
 
 /* ========== 右侧详情面板 ========== */
 #detail-panel {
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 301px;
+    flex: 0 0 300px;
+    width: 300px;
     background: var(--bg-white);
     border-left: 1px solid var(--border);
     padding: 16px;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: scroll;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    contain: layout style;
+    will-change: transform;
 }
 
 #detail-empty {
@@ -788,6 +803,7 @@ body {
     z-index: 50;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 #graph-toolbar {

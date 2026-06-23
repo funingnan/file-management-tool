@@ -35,7 +35,7 @@ func main() {
 		Title:  "PDF 知识库",
 		Width:  1180,
 		Height: 800,
-		MinWidth: 1180,
+		MinWidth: 1196,
 		MinHeight: 600,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
