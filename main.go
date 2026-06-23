@@ -18,7 +18,15 @@ func main() {
 	if err != nil {
 		log.Fatal("无法获取程序路径:", err)
 	}
-	dataDir := filepath.Join(filepath.Dir(execPath), "data")
+	execDir := filepath.Dir(execPath)
+	dataDir := filepath.Join(execDir, "data")
+
+	// 免安装 WebView2 运行时支持
+	// 如果 exe 同目录下存在 WebView2 文件夹，则使用它
+	webview2Dir := filepath.Join(execDir, "WebView2")
+	if info, err := os.Stat(webview2Dir); err == nil && info.IsDir() {
+		os.Setenv("WEBVIEW2_BROWSER_EXECUTABLE_FOLDER", webview2Dir)
+	}
 
 	// 初始化数据库
 	db, err := database.New(dataDir)
