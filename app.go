@@ -313,12 +313,14 @@ func (a *App) OpenFileLocation(docID int64) error {
 
 // Settings 应用设置
 type Settings struct {
-	EnabledTypes []string `json:"enabledTypes"` // 启用的文件类型
+	EnabledTypes     []string `json:"enabledTypes"`      // 启用的文件类型
+	CurrentFolderPath string   `json:"currentFolderPath"` // 当前选择的文件夹路径
 }
 
 // 默认设置
 var defaultSettings = Settings{
-	EnabledTypes: []string{"pdf", "docx", "xlsx", "pptx", "image", "video"},
+	EnabledTypes:     []string{"pdf", "docx", "xlsx", "pptx", "image", "video"},
+	CurrentFolderPath: "",
 }
 
 // GetSettings 获取当前设置

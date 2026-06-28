@@ -41,10 +41,10 @@ func main() {
 	// 启动 Wails
 	err = wails.Run(&options.App{
 		Title:  "PDF 知识库",
-		Width:  1180,
-		Height: 800,
+		Width:  1200,
+		Height: 900,
 		MinWidth: 1196,
-		MinHeight: 600,
+		MinHeight: 900,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},

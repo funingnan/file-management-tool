@@ -19,3 +19,7 @@ build/windows/
 .vscode/
 *.swp
 *.swo
+
+# Distribution
+dist/
+dist.zip

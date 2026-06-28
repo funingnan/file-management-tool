@@ -222,6 +222,7 @@ export namespace main {
 	}
 	export class Settings {
 	    enabledTypes: string[];
+	    currentFolderPath: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -230,6 +231,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.enabledTypes = source["enabledTypes"];
+	        this.currentFolderPath = source["currentFolderPath"];
 	    }
 	}
 

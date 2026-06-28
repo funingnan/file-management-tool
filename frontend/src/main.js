@@ -47,6 +47,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshFileTypeCounts();
     await updateDocCount();
     bindEvents();
+
+    // 恢复上次选择的文件夹路径
+    if (state.settings.currentFolderPath) {
+        state.currentFolderPath = state.settings.currentFolderPath;
+        state.filterMode = 'folder';
+        document.getElementById('btn-select-folder').classList.add('has-path');
+        const folderItem = document.querySelector('#file-type-filter .type-item[data-special="folder"]');
+        if (folderItem) folderItem.classList.add('active');
+        document.getElementById('btn-clear-filter').style.visibility = 'hidden';
+        await refreshDocuments();
+        await refreshTags();
+        await refreshFileTypeCounts();
+        await updateDocCount();
+    }
 });
 
 // ========== 标签选择器模式（右键菜单调用） ==========
@@ -798,6 +812,8 @@ async function handleSelectFolder() {
         await go.main.App.ScanFolder(folder, state.settings.enabledTypes);
         // 存储路径，切换到文件夹筛选
         state.currentFolderPath = folder;
+        state.settings.currentFolderPath = folder;
+        saveSettings();
         state.filterMode = 'folder';
         state.fileTypeFilter = 'all';
         state.activeTagIds = [];
