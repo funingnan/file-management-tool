@@ -10,5 +10,8 @@
   "author": {
     "name": "PDF KB",
     "email": ""
+  },
+  "build": {
+    "tags": ["native_webview2loader"]
   }
 }
