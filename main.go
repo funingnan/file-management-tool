@@ -10,6 +10,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 func main() {
@@ -24,9 +25,6 @@ func main() {
 	// 免安装 WebView2 运行时支持
 	// 如果 exe 同目录下存在 WebView2 文件夹，则使用它
 	webview2Dir := filepath.Join(execDir, "WebView2")
-	if info, err := os.Stat(webview2Dir); err == nil && info.IsDir() {
-		os.Setenv("WEBVIEW2_BROWSER_EXECUTABLE_FOLDER", webview2Dir)
-	}
 
 	// 初始化数据库
 	db, err := database.New(dataDir)
@@ -39,7 +37,7 @@ func main() {
 	app := NewApp(db, dataDir)
 
 	// 启动 Wails
-	err = wails.Run(&options.App{
+	opts := &options.App{
 		Title:  "PDF 知识库",
 		Width:  1200,
 		Height: 900,
@@ -53,7 +51,13 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
-	})
+	}
+	if info, err := os.Stat(webview2Dir); err == nil && info.IsDir() {
+		opts.Windows = &windows.Options{
+			WebviewBrowserPath: webview2Dir,
+		}
+	}
+	err = wails.Run(opts)
 
 	if err != nil {
 		log.Fatal("应用启动失败:", err)
