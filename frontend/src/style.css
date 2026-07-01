@@ -96,9 +96,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 320px;
-    direction: rtl;
-    text-align: left;
+    max-width: 420px;
     line-height: 30px;
 }
 

@@ -732,9 +732,14 @@ function handleFileTypeFilter(item) {
         state.fileTypeFilter = 'all';
         state.activeTagIds = [];
     } else {
-        state.filterMode = 'all';
         state.fileTypeFilter = type || 'all';
         state.activeTagIds = [];
+        // 如果当前已经是文件夹模式，不退出文件夹，只切换文件类型筛选
+        if (state.currentFolderPath) {
+            state.filterMode = 'folder';
+        } else {
+            state.filterMode = 'all';
+        }
         updatePathDisplay();
     }
 
@@ -1048,7 +1053,11 @@ async function toggleTagFilter(tagId) {
 
 function clearTagFilter() {
     state.activeTagIds = [];
-    state.filterMode = 'all';
+    if (state.currentFolderPath) {
+        state.filterMode = 'folder';
+    } else {
+        state.filterMode = 'all';
+    }
     state.fileTypeFilter = 'all';
     document.getElementById('btn-clear-filter').style.visibility = 'hidden';
     document.querySelectorAll('#file-type-filter .type-item').forEach(el => el.classList.remove('active'));
