@@ -998,7 +998,7 @@ async function loadFileTags(docId) {
     try {
         const detail = await go.main.App.GetDocument(docId);
         if (detail.tags && detail.tags.length > 0) {
-            const html = detail.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)}">${escapeHtml(t.name)}</span>`).join('');
+            const html = detail.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)};color:#fff">${escapeHtml(t.name)}</span>`).join('');
             state.tagCache[docId] = html;
             const container = document.getElementById(`file-tags-${docId}`);
             if (container) container.innerHTML = html;
@@ -1173,7 +1173,7 @@ async function handleAddTag() {
                 // 从服务器获取最新标签并更新DOM
                 try {
                     const doc = await go.main.App.GetDocument(id);
-                    const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)}">${escapeHtml(t.name)}</span>`).join('');
+                    const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)};color:#fff">${escapeHtml(t.name)}</span>`).join('');
                     state.tagCache[id] = tagsHtml;
                     const el = document.getElementById('file-tags-' + id);
                     if (el) el.innerHTML = tagsHtml;
@@ -1186,7 +1186,7 @@ async function handleAddTag() {
             // 更新文件列表中的标签显示
             try {
                 const doc = await go.main.App.GetDocument(state.selectedDocId);
-                const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)}">${escapeHtml(t.name)}</span>`).join('');
+                const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)};color:#fff">${escapeHtml(t.name)}</span>`).join('');
                 state.tagCache[state.selectedDocId] = tagsHtml;
                 const el = document.getElementById('file-tags-' + state.selectedDocId);
                 if (el) el.innerHTML = tagsHtml;
