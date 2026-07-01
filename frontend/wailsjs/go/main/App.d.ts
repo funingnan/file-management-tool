@@ -63,4 +63,6 @@ export function ScanFolder(arg1:string,arg2:Array<string>):Promise<main.ScanFold
 
 export function SelectFolder():Promise<string>;
 
+export function SetTagColor(arg1:number,arg2:string):Promise<void>;
+
 export function SetTagPickerMode(arg1:string):Promise<void>;

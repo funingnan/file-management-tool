@@ -52,6 +52,7 @@ export namespace database {
 	export class Tag {
 	    id: number;
 	    name: string;
+	    color: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Tag(source);
@@ -61,6 +62,7 @@ export namespace database {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	        this.color = source["color"];
 	    }
 	}
 	export class DocumentDetail {
@@ -186,6 +188,7 @@ export namespace database {
 	export class TagWithCount {
 	    id: number;
 	    name: string;
+	    color: string;
 	    count: number;
 	
 	    static createFrom(source: any = {}) {
@@ -196,6 +199,7 @@ export namespace database {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
+	        this.color = source["color"];
 	        this.count = source["count"];
 	    }
 	}

@@ -514,6 +514,40 @@ body {
 
 .tag-item .tag-name,
 .type-item .tag-name { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+.tag-color-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* 标签颜色选择器弹窗 */
+.tag-color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 1000;
+    width: 188px;
+}
+.tag-color-opt {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+}
+.tag-color-opt:hover {
+    transform: scale(1.2);
+    border-color: #333;
+}
 .tag-item .tag-count {
     font-size: 11px;
     color: var(--text-light);

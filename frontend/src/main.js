@@ -8,6 +8,13 @@ const FILE_TYPE_META = {
     video: { label: '视频',   icon: 'VID', iconSrc: 'src/icons/video.svg', bg: '#2D2D2D', color: '#fff', name: '视频' },
 };
 
+// 标签颜色预设
+const TAG_COLORS = ['#D13438','#E67E22','#F1C40F','#27AE60','#1ABC9C','#3498DB','#9B59B6','#E91E63','#795548','#95A5A6'];
+
+function getTagColor(tag) {
+    return tag.color || '#1a73e8';
+}
+
 // ========== 全局状态 ==========
 let state = {
     documents: [],
@@ -991,7 +998,7 @@ async function loadFileTags(docId) {
     try {
         const detail = await go.main.App.GetDocument(docId);
         if (detail.tags && detail.tags.length > 0) {
-            const html = detail.tags.map(t => `<span class="file-tag">${escapeHtml(t.name)}</span>`).join('');
+            const html = detail.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)}">${escapeHtml(t.name)}</span>`).join('');
             state.tagCache[docId] = html;
             const container = document.getElementById(`file-tags-${docId}`);
             if (container) container.innerHTML = html;
@@ -1013,11 +1020,13 @@ function renderTagList() {
     }
     container.innerHTML = state.allTags.map(tag => {
         const isActive = state.filterMode === 'tagged' && state.activeTagIds.includes(tag.id);
+        const color = getTagColor(tag);
         return `
             <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
-                <span class="tag-name"><img src="src/icons/tag.svg" style="width:13px;height:13px;vertical-align:middle;margin-right:2px" /># ${escapeHtml(tag.name)}</span>
+                <span class="tag-name"><span class="tag-color-dot" style="background:${color}"></span># ${escapeHtml(tag.name)}</span>
                 <span class="tag-count">${tag.count}</span>
                 <div class="tag-actions">
+                    <button class="tag-action-btn" data-action="color" data-tip="颜色"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${color};border:1px solid #ccc;vertical-align:middle"></span></button>
                     <button class="tag-action-btn" data-action="rename" data-tip="重命名"><img src="src/icons/edit.svg" style="width:14px;height:14px" /></button>
                     <button class="tag-action-btn" data-action="delete" data-tip="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
                 </div>
@@ -1033,6 +1042,10 @@ function renderTagList() {
             state.fileTypeFilter = 'all';
             state.filterMode = 'tagged';
             toggleTagFilter(tagId);
+        });
+        item.querySelector('[data-action="color"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            showTagColorPicker(tagId, item.querySelector('[data-action="color"]'));
         });
         item.querySelector('[data-action="rename"]').addEventListener('click', () => handleRenameTag(tagId));
         item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));
@@ -1093,7 +1106,8 @@ function renderDetail(doc) {
     if (doc.tags && doc.tags.length > 0) {
         tagContainer.innerHTML = doc.tags.map(t => {
             currentTagIds.add(t.id);
-            return `<span class="detail-tag">${escapeHtml(t.name)}<span class="remove-tag" data-tag-id="${t.id}" title="移除">×</span></span>`;
+            const color = getTagColor(t);
+            return `<span class="detail-tag" style="background:${color}20;color:${color};border-color:${color}40">${escapeHtml(t.name)}<span class="remove-tag" data-tag-id="${t.id}" title="移除" style="color:${color}">×</span></span>`;
         }).join('');
         tagContainer.querySelectorAll('.remove-tag').forEach(el => {
             el.addEventListener('click', async () => {
@@ -1110,9 +1124,10 @@ function renderDetail(doc) {
     const availableContainer = document.getElementById('available-tags');
     const available = (state.allTags || []).filter(t => !currentTagIds.has(t.id));
     if (available.length > 0) {
-        availableContainer.innerHTML = available.map(t =>
-            `<span class="available-tag" data-tag-name="${escapeHtml(t.name)}" title="点击添加"># ${escapeHtml(t.name)}</span>`
-        ).join('');
+        availableContainer.innerHTML = available.map(t => {
+            const color = getTagColor(t);
+            return `<span class="available-tag" data-tag-name="${escapeHtml(t.name)}" title="点击添加" style="border-color:${color}40;color:${color}">${escapeHtml(t.name)}</span>`;
+        }).join('');
         availableContainer.querySelectorAll('.available-tag').forEach(el => {
             el.addEventListener('click', async () => {
                 await go.main.App.AddTagToDocument(doc.id, el.dataset.tagName);
@@ -1158,7 +1173,7 @@ async function handleAddTag() {
                 // 从服务器获取最新标签并更新DOM
                 try {
                     const doc = await go.main.App.GetDocument(id);
-                    const tagsHtml = doc.tags.map(t => `<span class="file-tag">${escapeHtml(t.name)}</span>`).join('');
+                    const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)}">${escapeHtml(t.name)}</span>`).join('');
                     state.tagCache[id] = tagsHtml;
                     const el = document.getElementById('file-tags-' + id);
                     if (el) el.innerHTML = tagsHtml;
@@ -1171,7 +1186,7 @@ async function handleAddTag() {
             // 更新文件列表中的标签显示
             try {
                 const doc = await go.main.App.GetDocument(state.selectedDocId);
-                const tagsHtml = doc.tags.map(t => `<span class="file-tag">${escapeHtml(t.name)}</span>`).join('');
+                const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)}">${escapeHtml(t.name)}</span>`).join('');
                 state.tagCache[state.selectedDocId] = tagsHtml;
                 const el = document.getElementById('file-tags-' + state.selectedDocId);
                 if (el) el.innerHTML = tagsHtml;
@@ -1256,6 +1271,50 @@ function toggleTagMatchMode() {
     btn.textContent = state.tagMatchMode === 'union' ? '并集' : '交集';
     btn.classList.toggle('active', state.tagMatchMode === 'intersection');
     if (state.activeTagIds.length > 0) refreshDocuments();
+}
+
+// ========== 标签颜色选择 ==========
+function showTagColorPicker(tagId, btnEl) {
+    // 移除已有的颜色选择器
+    document.querySelectorAll('.tag-color-picker').forEach(el => el.remove());
+    
+    const picker = document.createElement('div');
+    picker.className = 'tag-color-picker';
+    picker.innerHTML = TAG_COLORS.map(c =>
+        `<div class="tag-color-opt" data-color="${c}" style="background:${c}"></div>`
+    ).join('');
+    
+    // 定位在按钮下方
+    const rect = btnEl.getBoundingClientRect();
+    const sidebar = document.getElementById('tag-panel');
+    const sidebarRect = sidebar.getBoundingClientRect();
+    picker.style.position = 'fixed';
+    picker.style.left = Math.min(rect.left, sidebarRect.right - 220) + 'px';
+    picker.style.top = (rect.bottom + 4) + 'px';
+    document.body.appendChild(picker);
+    
+    picker.querySelectorAll('.tag-color-opt').forEach(el => {
+        el.addEventListener('click', async () => {
+            const color = el.dataset.color;
+            try {
+                await go.main.App.SetTagColor(tagId, color);
+                await refreshTags();
+                // 更新文件列表中的标签显示
+                state.documents.forEach(d => delete state.tagCache[d.id]);
+                renderFileList();
+                if (state.selectedDocId) selectDocument(state.selectedDocId);
+            } catch (err) { showToast('设置颜色失败: ' + err, 'error'); }
+            picker.remove();
+        });
+    });
+    
+    // 点击其他地方关闭
+    setTimeout(() => document.addEventListener('click', closePicker = (e) => {
+        if (!picker.contains(e.target) && e.target !== btnEl && !btnEl.contains(e.target)) {
+            picker.remove();
+            document.removeEventListener('click', closePicker);
+        }
+    }), 0);
 }
 
 // ========== 标签操作 ==========

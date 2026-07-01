@@ -28,14 +28,16 @@ type Document struct {
 
 // Tag 表示一个标签
 type Tag struct {
-	ID   int64  `json:"id"`
-	Name string `json:"name"`
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
 }
 
 // TagWithCount 带使用次数的标签
 type TagWithCount struct {
 	ID    int64  `json:"id"`
 	Name  string `json:"name"`
+	Color string `json:"color"`
 	Count int    `json:"count"`
 }
 

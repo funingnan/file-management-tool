@@ -98,6 +98,7 @@ func (db *DB) migrate() error {
 	db.conn.Exec(`ALTER TABLE documents ADD COLUMN file_type TEXT DEFAULT 'pdf'`)
 	db.conn.Exec(`ALTER TABLE documents ADD COLUMN file_size INTEGER DEFAULT 0`)
 	db.conn.Exec(`ALTER TABLE documents ADD COLUMN mod_time DATETIME DEFAULT CURRENT_TIMESTAMP`)
+	db.conn.Exec(`ALTER TABLE tags ADD COLUMN color TEXT DEFAULT ''`)
 	return nil
 }
 
@@ -286,7 +287,7 @@ func (db *DB) GetDocument(id int64) (*DocumentDetail, error) {
 	}
 
 	rows, err := db.conn.Query(
-		`SELECT t.id, t.name FROM tags t
+		`SELECT t.id, t.name, t.color FROM tags t
 		 INNER JOIN document_tags dt ON t.id = dt.tag_id
 		 WHERE dt.document_id = ? ORDER BY t.name`, id,
 	)
@@ -297,7 +298,7 @@ func (db *DB) GetDocument(id int64) (*DocumentDetail, error) {
 
 	for rows.Next() {
 		var tag Tag
-		if err := rows.Scan(&tag.ID, &tag.Name); err != nil {
+		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Color); err != nil {
 			return nil, err
 		}
 		doc.Tags = append(doc.Tags, tag)
@@ -324,10 +325,26 @@ func (db *DB) EnsureTag(name string) (int64, error) {
 	return id, err
 }
 
+// GetTag 获取单个标签
+func (db *DB) GetTag(tagID int64) (*Tag, error) {
+	var t Tag
+	err := db.conn.QueryRow(`SELECT id, name, color FROM tags WHERE id = ?`, tagID).Scan(&t.ID, &t.Name, &t.Color)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+// SetTagColor 设置标签颜色
+func (db *DB) SetTagColor(tagID int64, color string) error {
+	_, err := db.conn.Exec(`UPDATE tags SET color = ? WHERE id = ?`, color, tagID)
+	return err
+}
+
 // ListTags 列出所有标签及使用次数
 func (db *DB) ListTags() ([]TagWithCount, error) {
 	rows, err := db.conn.Query(`
-		SELECT t.id, t.name, COUNT(dt.document_id) as cnt
+		SELECT t.id, t.name, t.color, COUNT(dt.document_id) as cnt
 		FROM tags t
 		LEFT JOIN document_tags dt ON t.id = dt.tag_id
 		GROUP BY t.id

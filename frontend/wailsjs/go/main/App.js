@@ -122,6 +122,10 @@ export function SelectFolder() {
   return window['go']['main']['App']['SelectFolder']();
 }
 
+export function SetTagColor(arg1, arg2) {
+  return window['go']['main']['App']['SetTagColor'](arg1, arg2);
+}
+
 export function SetTagPickerMode(arg1) {
   return window['go']['main']['App']['SetTagPickerMode'](arg1);
 }

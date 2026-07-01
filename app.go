@@ -289,6 +289,11 @@ func (a *App) RenameTag(tagID int64, newName string) error {
 	return a.tagger.RenameTag(tagID, newName)
 }
 
+// SetTagColor 设置标签颜色
+func (a *App) SetTagColor(tagID int64, color string) error {
+	return a.db.SetTagColor(tagID, color)
+}
+
 // ---------- 系统操作 ----------
 
 // OpenFile 用系统默认程序打开 PDF 文件
