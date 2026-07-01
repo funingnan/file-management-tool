@@ -1255,7 +1255,7 @@ async function handleBatchRemoveDocs() {
 function toggleTagMatchMode() {
     state.tagMatchMode = state.tagMatchMode === 'union' ? 'intersection' : 'union';
     const btn = document.getElementById('btn-tag-mode');
-    btn.textContent = state.tagMatchMode === 'union' ? '∪ 并集' : '∩ 交集';
+    btn.textContent = state.tagMatchMode === 'union' ? '并集' : '交集';
     btn.classList.toggle('active', state.tagMatchMode === 'intersection');
     if (state.activeTagIds.length > 0) refreshDocuments();
 }
