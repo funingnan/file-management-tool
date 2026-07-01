@@ -1151,6 +1151,7 @@ async function handleAddTag() {
             await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), tagName);
             state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
             state.multiSelectedIds.clear();
+            state.selectedDocIds.clear();
             document.getElementById('select-all').checked = false;
         } else if (state.selectedDocId) {
             // 单选模式：给当前选中的文件添加标签
