@@ -517,9 +517,11 @@ type LostDocument struct {
 
 // ListLostDocuments 返回指定文件夹路径下数据库中已不存在的文档
 func (db *DB) ListLostDocuments(folderPath string) ([]LostDocument, error) {
-	// 确保路径以分隔符结尾，避免匹配到其他文件夹
-	prefix := strings.TrimRight(folderPath, "/\\") + "/"
-	rows, err := db.conn.Query(`SELECT id, path, filename, file_size, mod_time FROM documents WHERE path LIKE ? || '%'`, prefix)
+	// 确保路径以系统分隔符结尾，避免匹配到其他文件夹（如 Documents 不会匹配 Documents Backup）
+	prefix := strings.TrimRight(folderPath, "/\\") + string(filepath.Separator)
+	// LIKE 中 % 和 _ 是通配符，需要转义
+	likePattern := strings.ReplaceAll(strings.ReplaceAll(prefix, "%", "\\%"), "_", "\\_") + "%"
+	rows, err := db.conn.Query(`SELECT id, path, filename, file_size, mod_time FROM documents WHERE path LIKE ? ESCAPE '\'`, likePattern)
 	if err != nil {
 		return nil, err
 	}
