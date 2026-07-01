@@ -731,6 +731,7 @@ function handleFileTypeFilter(item) {
         state.filterMode = 'folder';
         state.fileTypeFilter = 'all';
         state.activeTagIds = [];
+        updatePathDisplay();
     } else {
         state.filterMode = 'all';
         state.fileTypeFilter = type || 'all';
