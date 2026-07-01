@@ -53,6 +53,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         state.currentFolderPath = state.settings.currentFolderPath;
         state.filterMode = 'folder';
         document.getElementById('btn-select-folder').classList.add('has-path');
+        // 去掉所有选中状态，再激活文件夹
+        document.querySelectorAll('#file-type-filter .type-item').forEach(el => el.classList.remove('active'));
         const folderItem = document.querySelector('#file-type-filter .type-item[data-special="folder"]');
         if (folderItem) folderItem.classList.add('active');
         document.getElementById('btn-clear-filter').style.visibility = 'hidden';
