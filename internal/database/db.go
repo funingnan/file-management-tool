@@ -358,7 +358,7 @@ func (db *DB) ListTags() ([]TagWithCount, error) {
 	var tags []TagWithCount
 	for rows.Next() {
 		var t TagWithCount
-		if err := rows.Scan(&t.ID, &t.Name, &t.Count); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Color, &t.Count); err != nil {
 			return nil, err
 		}
 		tags = append(tags, t)
