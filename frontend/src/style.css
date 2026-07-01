@@ -492,12 +492,6 @@ body {
     font-weight: 600;
 }
 
-.tag-header-btns {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
 #tag-list {
     flex: 1;
     overflow-y: auto;
