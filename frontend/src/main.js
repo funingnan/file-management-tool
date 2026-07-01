@@ -1063,7 +1063,7 @@ function clearTagFilter() {
 // ========== 路径显示 ==========
 function updatePathDisplay() {
     const el = document.getElementById('current-path');
-    if (state.filterMode === 'folder' && state.currentFolderPath) {
+    if (state.currentFolderPath) {
         el.textContent = state.currentFolderPath;
         el.style.display = 'inline';
     } else {
