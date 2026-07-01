@@ -1309,12 +1309,13 @@ function showTagColorPicker(tagId, btnEl) {
     });
     
     // 点击其他地方关闭
-    setTimeout(() => document.addEventListener('click', closePicker = (e) => {
+    const closeColorPicker = (e) => {
         if (!picker.contains(e.target) && e.target !== btnEl && !btnEl.contains(e.target)) {
             picker.remove();
-            document.removeEventListener('click', closePicker);
+            document.removeEventListener('click', closeColorPicker);
         }
-    }), 0);
+    };
+    setTimeout(() => document.addEventListener('click', closeColorPicker), 0);
 }
 
 // ========== 标签操作 ==========
