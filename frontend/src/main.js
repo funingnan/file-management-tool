@@ -18,6 +18,7 @@ let state = {
     lastClickedIndex: -1,  // Shift 多选用
     currentFolderPath: '',  // 当前选择的文件夹路径
     activeTagIds: [],
+    tagMatchMode: 'union', // 'union'=并集 'intersection'=交集
     filterMode: 'all',
     fileTypeFilter: 'all',
     searchText: '',
@@ -25,7 +26,7 @@ let state = {
     graphMode: 'document',
     graphNetwork: null,
     allTags: [],
-    settings: { enabledTypes: ['pdf','docx','xlsx','pptx','image','video'] },
+    settings: { enabledTypes: ['pdf','docx','xlsx','pptx'] },
     tagCache: {},  // docId → tags HTML 缓存
 };
 
@@ -699,6 +700,7 @@ function bindEvents() {
     document.getElementById('btn-deselect-all').addEventListener('click', handleDeselectAll);
     document.getElementById('btn-batch-remove-docs').addEventListener('click', handleBatchRemoveDocs);
     document.getElementById('btn-clear-filter').addEventListener('click', clearTagFilter);
+    document.getElementById('btn-tag-mode').addEventListener('click', toggleTagMatchMode);
     document.getElementById('btn-open-file').addEventListener('click', handleOpenFile);
     document.getElementById('btn-open-dir').addEventListener('click', handleOpenDir);
     document.getElementById('btn-remove-doc').addEventListener('click', handleRemoveDoc);
@@ -766,7 +768,7 @@ async function refreshFileTypeCounts() {
     try {
         if (state.currentFolderPath) {
             const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();
-            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || []);
+            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || [], state.tagMatchMode);
             const folderCount = allDocs.filter(d => {
                 const docPath = d.path.toLowerCase();
                 return docPath.startsWith(prefix + '\\') || docPath.startsWith(prefix + '/') || docPath === prefix;
@@ -847,7 +849,7 @@ async function refreshDocuments() {
         } else {
             fileTypes = [state.fileTypeFilter];
         }
-        state.documents = await go.main.App.ListDocuments(state.activeTagIds, state.searchText, untagged, fileTypes);
+        state.documents = await go.main.App.ListDocuments(state.activeTagIds, state.searchText, untagged, fileTypes, state.tagMatchMode);
         // 文件夹模式：只显示该文件夹及其子目录下的文件
         if (state.filterMode === 'folder' && state.currentFolderPath) {
             const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();
@@ -1247,6 +1249,15 @@ async function handleBatchRemoveDocs() {
         await updateDocCount();
         showToast(`已移除 ${removed} 个文件`);
     } catch (err) { showToast('批量移除失败: ' + err, 'error'); }
+}
+
+// ========== 标签匹配模式切换 ==========
+function toggleTagMatchMode() {
+    state.tagMatchMode = state.tagMatchMode === 'union' ? 'intersection' : 'union';
+    const btn = document.getElementById('btn-tag-mode');
+    btn.textContent = state.tagMatchMode === 'union' ? '∪ 并集' : '∩ 交集';
+    btn.classList.toggle('active', state.tagMatchMode === 'intersection');
+    if (state.activeTagIds.length > 0) refreshDocuments();
 }
 
 // ========== 标签操作 ==========

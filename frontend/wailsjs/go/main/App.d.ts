@@ -39,7 +39,7 @@ export function GetUntaggedCount(arg1:Array<string>):Promise<number>;
 
 export function ImportDatabase():Promise<boolean>;
 
-export function ListDocuments(arg1:Array<number>,arg2:string,arg3:boolean,arg4:Array<string>):Promise<Array<database.Document>>;
+export function ListDocuments(arg1:Array<number>,arg2:string,arg3:boolean,arg4:Array<string>,arg5:string):Promise<Array<database.Document>>;
 
 export function ListTags():Promise<Array<database.TagWithCount>>;
 

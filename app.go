@@ -201,8 +201,8 @@ func (a *App) SelectFolder() (string, error) {
 // ---------- 文档操作 ----------
 
 // ListDocuments 查询文档列表
-func (a *App) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string) ([]database.Document, error) {
-	return a.db.ListDocuments(tagIDs, searchText, untagged, fileTypes)
+func (a *App) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string) ([]database.Document, error) {
+	return a.db.ListDocuments(tagIDs, searchText, untagged, fileTypes, tagMatchMode)
 }
 
 // GetDocument 获取文档详情（含标签）
@@ -319,7 +319,7 @@ type Settings struct {
 
 // 默认设置
 var defaultSettings = Settings{
-	EnabledTypes:     []string{"pdf", "docx", "xlsx", "pptx", "image", "video"},
+	EnabledTypes:     []string{"pdf", "docx", "xlsx", "pptx"},
 	CurrentFolderPath: "",
 }
 

@@ -174,7 +174,7 @@ func (db *DB) UpsertDocuments(docs []DocumentInput) (int, error) {
 // untagged=true 时只返回没有任何标签的文档
 // fileTypes 为空时不过滤类型，如 ["pdf","docx","xlsx","pptx"]
 // 搜索支持模糊匹配（非连续字符匹配），按匹配度排序
-func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string) ([]Document, error) {
+func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string) ([]Document, error) {
 	query := `SELECT DISTINCT d.id, d.path, d.filename, d.title, d.file_type, d.file_size, d.mod_time, d.created_at, d.indexed_at
 		FROM documents d`
 	args := []interface{}{}
@@ -192,8 +192,20 @@ func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fi
 			placeholders += "?"
 			args = append(args, tid)
 		}
-		joins += ` INNER JOIN document_tags dt ON d.id = dt.document_id`
-		where += fmt.Sprintf(` AND dt.tag_id IN (%s)`, placeholders)
+		if tagMatchMode == "intersection" {
+			// 交集：文档必须包含所有选中的标签
+			where += fmt.Sprintf(` AND d.id IN (
+				SELECT dt.document_id FROM document_tags dt
+				WHERE dt.tag_id IN (%s)
+				GROUP BY dt.document_id
+				HAVING COUNT(DISTINCT dt.tag_id) = ?
+			)`, placeholders)
+			args = append(args, len(tagIDs))
+		} else {
+			// 并集（默认）：文档包含任一选中标签即可
+			joins += ` INNER JOIN document_tags dt ON d.id = dt.document_id`
+			where += fmt.Sprintf(` AND dt.tag_id IN (%s)`, placeholders)
+		}
 	}
 
 	if len(fileTypes) > 0 {
