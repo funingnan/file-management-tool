@@ -1130,7 +1130,6 @@ function renderDetail(doc) {
 // ========== 移除文件 ==========
 async function handleRemoveDoc() {
     if (!state.selectedDocId) return;
-    if (!confirm('确定从列表中移除此文件？\n（不会删除真实文件）')) return;
     try {
         await go.main.App.RemoveDocument(state.selectedDocId);
         state.selectedDocId = null;
@@ -1238,7 +1237,6 @@ function handleDeselectAll() {
 async function handleBatchRemoveDocs() {
     const count = state.multiSelectedIds.size;
     if (count === 0) return;
-    if (!confirm(`确定要从列表中移除 ${count} 个文件吗？（不会删除真实文件）`)) return;
     try {
         const removed = await go.main.App.RemoveDocuments(Array.from(state.multiSelectedIds));
         state.multiSelectedIds.clear();
