@@ -141,7 +141,7 @@ func (a *App) ScanFolder(folderPath string, enabledTypes []string) (*ScanFolderR
 	}
 
 	// 智能匹配：尝试找回改名/移动的文件
-	relocated := a.smartRelocate(results)
+	relocated := a.smartRelocate(folderPath, results)
 
 	return &ScanFolderResult{
 		NewFiles:  newCount,
@@ -151,14 +151,14 @@ func (a *App) ScanFolder(folderPath string, enabledTypes []string) (*ScanFolderR
 }
 
 // smartRelocate 用文件大小+修改时间匹配丢失的文件
-func (a *App) smartRelocate(scanned []scanner.ScanResult) int {
+func (a *App) smartRelocate(folderPath string, scanned []scanner.ScanResult) int {
 	// 如果扫描结果数量大于等于数据库文档数量，说明没有丢失的文件，跳过智能匹配
 	dbCount, err := a.db.CountDocuments()
 	if err != nil || len(scanned) >= dbCount {
 		return 0
 	}
 
-	lost, err := a.db.ListLostDocuments()
+	lost, err := a.db.ListLostDocuments(folderPath)
 	if err != nil || len(lost) == 0 {
 		return 0
 	}

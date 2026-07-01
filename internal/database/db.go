@@ -515,9 +515,11 @@ type LostDocument struct {
 	ModTime  time.Time
 }
 
-// ListLostDocuments 返回数据库中路径已不存在的文档
-func (db *DB) ListLostDocuments() ([]LostDocument, error) {
-	rows, err := db.conn.Query(`SELECT id, path, filename, file_size, mod_time FROM documents`)
+// ListLostDocuments 返回指定文件夹路径下数据库中已不存在的文档
+func (db *DB) ListLostDocuments(folderPath string) ([]LostDocument, error) {
+	// 确保路径以分隔符结尾，避免匹配到其他文件夹
+	prefix := strings.TrimRight(folderPath, "/\\") + "/"
+	rows, err := db.conn.Query(`SELECT id, path, filename, file_size, mod_time FROM documents WHERE path LIKE ? || '%'`, prefix)
 	if err != nil {
 		return nil, err
 	}
