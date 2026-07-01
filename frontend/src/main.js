@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const folderItem = document.querySelector('#file-type-filter .type-item[data-special="folder"]');
         if (folderItem) folderItem.classList.add('active');
         document.getElementById('btn-clear-filter').style.visibility = 'hidden';
+        updatePathDisplay();
         await refreshDocuments();
         await refreshTags();
         await refreshFileTypeCounts();
@@ -742,6 +743,7 @@ function handleFileTypeFilter(item) {
         state.filterMode = 'all';
         state.fileTypeFilter = type || 'all';
         state.activeTagIds = [];
+        updatePathDisplay();
     }
 
     document.getElementById('btn-clear-filter').style.visibility = 'hidden';
@@ -819,6 +821,7 @@ async function handleSelectFolder() {
         state.activeTagIds = [];
         // 显示路径已选状态（圆点指示器）
         document.getElementById('btn-select-folder').classList.add('has-path');
+        updatePathDisplay();
         // 刷新
         await refreshDocuments();
         await refreshTags();
@@ -1060,7 +1063,19 @@ function clearTagFilter() {
     const allItem = document.querySelector('#file-type-filter .type-item[data-type="all"]');
     if (allItem) allItem.classList.add('active');
     renderTagList();
+    updatePathDisplay();
     refreshDocuments();
+}
+
+// ========== 路径显示 ==========
+function updatePathDisplay() {
+    const el = document.getElementById('current-path');
+    if (state.filterMode === 'folder' && state.currentFolderPath) {
+        el.textContent = state.currentFolderPath;
+        el.style.display = 'inline';
+    } else {
+        el.style.display = 'none';
+    }
 }
 
 // ========== 文件详情 ==========
