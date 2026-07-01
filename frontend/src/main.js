@@ -1147,13 +1147,31 @@ async function handleAddTag() {
 
     try {
         if (state.multiSelectedIds.size > 0) {
-            // 多选模式：给所有勾选的文件添加标签
+            // 多选模式：给所有勾选的文件添加标签（不刷新文件列表，保持选择状态）
             await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), tagName);
-            state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
+            for (const id of state.multiSelectedIds) {
+                delete state.tagCache[id];
+                // 从服务器获取最新标签并更新DOM
+                try {
+                    const doc = await go.main.App.GetDocument(id);
+                    const tagsHtml = doc.tags.map(t => `<span class="file-tag">${escapeHtml(t.name)}</span>`).join('');
+                    state.tagCache[id] = tagsHtml;
+                    const el = document.getElementById('file-tags-' + id);
+                    if (el) el.innerHTML = tagsHtml;
+                } catch (e) { /* ignore */ }
+            }
         } else if (state.selectedDocId) {
             // 单选模式：给当前选中的文件添加标签
             await go.main.App.AddTagToDocument(state.selectedDocId, tagName);
             delete state.tagCache[state.selectedDocId];
+            // 更新文件列表中的标签显示
+            try {
+                const doc = await go.main.App.GetDocument(state.selectedDocId);
+                const tagsHtml = doc.tags.map(t => `<span class="file-tag">${escapeHtml(t.name)}</span>`).join('');
+                state.tagCache[state.selectedDocId] = tagsHtml;
+                const el = document.getElementById('file-tags-' + state.selectedDocId);
+                if (el) el.innerHTML = tagsHtml;
+            } catch (e) { /* ignore */ }
             await selectDocument(state.selectedDocId);
         } else {
             return;
@@ -1161,7 +1179,6 @@ async function handleAddTag() {
         input.value = '';
         hideAutocomplete();
         await refreshTags();
-        await refreshDocuments();
     } catch (err) { showToast('添加标签失败: ' + err, 'error'); }
 }
 
