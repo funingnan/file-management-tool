@@ -604,15 +604,6 @@ body {
     min-width: 70px;
 }
 
-#batch-tag-input {
-    width: 140px;
-    height: 30px;
-    padding: 4px 12px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 13px;
-}
-
 #file-list {
     flex: 1;
     overflow-y: scroll;
@@ -827,50 +818,6 @@ body {
     outline: none;
 }
 #tag-input:focus { border-color: var(--primary); }
-
-.tag-pick-wrapper {
-    position: relative;
-}
-
-.tag-picker-popup {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    margin-top: 4px;
-    z-index: 100;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    padding: 8px;
-    max-width: 480px;
-    max-height: 220px;
-    overflow-y: auto;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    align-content: flex-start;
-}
-
-.tag-picker-item {
-    display: inline-block;
-    padding: 3px 8px;
-    background: #f5f5f5;
-    color: #666;
-    border: 1px dashed #ccc;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s;
-}
-
-.tag-picker-item:hover {
-    background: var(--tag-bg);
-    color: var(--tag-text);
-    border-color: var(--tag-text);
-    border-style: solid;
-}
 
 #available-tags {
     display: flex;

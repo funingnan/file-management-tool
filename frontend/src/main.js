@@ -695,12 +695,7 @@ function bindEvents() {
     document.getElementById('graph-search').addEventListener('input', debounce(handleGraphSearch, 300));
     document.getElementById('select-all').addEventListener('change', handleSelectAll);
     document.getElementById('btn-deselect-all').addEventListener('click', handleDeselectAll);
-    document.getElementById('btn-batch-tag').addEventListener('click', handleBatchTag);
     document.getElementById('btn-batch-remove-docs').addEventListener('click', handleBatchRemoveDocs);
-    document.getElementById('btn-batch-remove-tags').addEventListener('click', handleBatchRemoveTags);
-    document.getElementById('batch-tag-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') handleBatchTag(); });
-    document.getElementById('batch-tag-input').addEventListener('focus', () => showTagPicker('batch'));
-    document.getElementById('batch-tag-input').addEventListener('input', () => filterTagPicker('batch'));
     document.getElementById('btn-clear-filter').addEventListener('click', clearTagFilter);
     document.getElementById('btn-open-file').addEventListener('click', handleOpenFile);
     document.getElementById('btn-open-dir').addEventListener('click', handleOpenDir);
@@ -713,11 +708,6 @@ function bindEvents() {
     document.getElementById('btn-modal-close').addEventListener('click', () => { hideModal(); document.getElementById('btn-settings').blur(); });
     document.getElementById('btn-settings').addEventListener('click', showSettingsModal);
     // 点击空白关闭批量标签选择器
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.tag-pick-wrapper') && !e.target.closest('#batch-tag-picker')) {
-            hideTagPicker('batch');
-        }
-    });
 }
 
 // ========== 文件类型筛选 ==========
@@ -1153,13 +1143,25 @@ async function handleRemoveDoc() {
 async function handleAddTag() {
     const input = document.getElementById('tag-input');
     const tagName = input.value.trim();
-    if (!tagName || !state.selectedDocId) return;
+    if (!tagName) return;
+
     try {
-        await go.main.App.AddTagToDocument(state.selectedDocId, tagName);
-        delete state.tagCache[state.selectedDocId];
+        if (state.multiSelectedIds.size > 0) {
+            // 多选模式：给所有勾选的文件添加标签
+            await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), tagName);
+            state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
+            state.multiSelectedIds.clear();
+            document.getElementById('select-all').checked = false;
+        } else if (state.selectedDocId) {
+            // 单选模式：给当前选中的文件添加标签
+            await go.main.App.AddTagToDocument(state.selectedDocId, tagName);
+            delete state.tagCache[state.selectedDocId];
+            await selectDocument(state.selectedDocId);
+        } else {
+            return;
+        }
         input.value = '';
         hideAutocomplete();
-        await selectDocument(state.selectedDocId);
         await refreshTags();
         await refreshDocuments();
     } catch (err) { showToast('添加标签失败: ' + err, 'error'); }
@@ -1181,67 +1183,6 @@ function handleTagAutocomplete() {
 
 function hideAutocomplete() { document.getElementById('tag-autocomplete').style.display = 'none'; }
 
-// ========== 矩阵标签选择器 ==========
-function showTagPicker(context) {
-    const pickerId = context === 'batch' ? 'batch-tag-picker' : null;
-    if (!pickerId) return; // detail 用已有 autocomplete
-
-    const picker = document.getElementById(pickerId);
-    if (!picker || !state.allTags || state.allTags.length === 0) return;
-
-    renderTagPickerItems(picker, '');
-    picker.style.display = 'flex';
-}
-
-function hideTagPicker(context) {
-    const pickerId = context === 'batch' ? 'batch-tag-picker' : null;
-    if (!pickerId) return;
-    const picker = document.getElementById(pickerId);
-    if (picker) picker.style.display = 'none';
-}
-
-function filterTagPicker(context) {
-    const pickerId = context === 'batch' ? 'batch-tag-picker' : null;
-    const inputId = context === 'batch' ? 'batch-tag-input' : null;
-    if (!pickerId || !inputId) return;
-
-    const picker = document.getElementById(pickerId);
-    const input = document.getElementById(inputId);
-    if (!picker || !input) return;
-
-    renderTagPickerItems(picker, input.value.trim().toLowerCase());
-    picker.style.display = 'flex';
-}
-
-function renderTagPickerItems(picker, filter) {
-    const tags = filter
-        ? state.allTags.filter(t => t.name.toLowerCase().includes(filter))
-        : state.allTags;
-
-    if (tags.length === 0) {
-        picker.innerHTML = '<span style="color:#aaa;font-size:12px;padding:4px">无匹配标签</span>';
-        return;
-    }
-
-    picker.innerHTML = tags.map(t =>
-        `<span class="tag-picker-item" data-tag-name="${escapeHtml(t.name)}"># ${escapeHtml(t.name)}</span>`
-    ).join('');
-
-    picker.querySelectorAll('.tag-picker-item').forEach(item => {
-        item.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // 阻止 blur
-            const inputId = 'batch-tag-input';
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.value = item.dataset.tagName;
-                hideTagPicker('batch');
-                input.focus();
-            }
-        });
-    });
-}
-
-// ========== 批量打标签 ==========
 function updateBatchActions() {
     const count = state.multiSelectedIds.size;
     const actions = document.getElementById('batch-actions');
@@ -1273,22 +1214,6 @@ function handleDeselectAll() {
     renderFileList();
 }
 
-async function handleBatchTag() {
-    const input = document.getElementById('batch-tag-input');
-    const tagName = input.value.trim();
-    if (!tagName || state.multiSelectedIds.size === 0) return;
-    try {
-        const count = await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), tagName);
-        state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
-        input.value = '';
-        state.multiSelectedIds.clear();
-        document.getElementById('select-all').checked = false;
-        await refreshDocuments();
-        await refreshTags();
-        showToast(`已给 ${count} 个文件添加标签「${tagName}」`);
-    } catch (err) { showToast('批量打标签失败: ' + err, 'error'); }
-}
-
 // ========== 批量移除文件 ==========
 async function handleBatchRemoveDocs() {
     const count = state.multiSelectedIds.size;
@@ -1304,29 +1229,6 @@ async function handleBatchRemoveDocs() {
         await updateDocCount();
         showToast(`已移除 ${removed} 个文件`);
     } catch (err) { showToast('批量移除失败: ' + err, 'error'); }
-}
-
-// ========== 批量移除标签 ==========
-async function handleBatchRemoveTags() {
-    const count = state.multiSelectedIds.size;
-    if (count === 0) return;
-    const input = document.getElementById('batch-tag-input');
-    const tagName = input.value.trim();
-    if (!tagName) { showToast('请先输入或选择要移除的标签', 'error'); return; }
-    const tag = state.allTags.find(t => t.name === tagName);
-    if (!tag) { showToast(`标签「${tagName}」不存在`, 'error'); return; }
-    if (!confirm(`确定要从 ${count} 个文件中移除标签「${tagName}」吗？`)) return;
-    try {
-        const removed = await go.main.App.BatchRemoveTagFromDocuments(Array.from(state.multiSelectedIds), tag.id);
-        state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
-        input.value = '';
-        state.multiSelectedIds.clear();
-        document.getElementById('select-all').checked = false;
-        await refreshDocuments();
-        await refreshTags();
-        if (state.selectedDocId) await selectDocument(state.selectedDocId);
-        showToast(`已从 ${removed} 个文件中移除标签「${tagName}」`);
-    } catch (err) { showToast('批量移除标签失败: ' + err, 'error'); }
 }
 
 // ========== 标签操作 ==========
