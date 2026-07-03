@@ -653,8 +653,7 @@ body {
 }
 
 /* 搜索模式切换按钮 */
-.search-mode-btn { min-width: 44px; }
-.search-mode-btn.active { }
+.search-mode-btn { }
 
 #file-list {
     flex: 1;
