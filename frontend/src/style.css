@@ -635,11 +635,8 @@ body {
 }
 
 /* 搜索框（在中间栏） */
-.header-search {
-    margin-left: auto;
-}
 .header-search input {
-    width: 200px;
+    width: 150px;
     height: 30px;
     padding: 4px 12px;
     border: 1px solid var(--border);
