@@ -1033,10 +1033,9 @@ function renderTagList() {
         const color = getTagColor(tag);
         return `
             <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
-                <span class="tag-name"><span class="tag-color-dot" style="background:${color}"></span># ${escapeHtml(tag.name)}</span>
+                <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span># ${escapeHtml(tag.name)}</span>
                 <span class="tag-count">${tag.count}</span>
                 <div class="tag-actions">
-                    <button class="tag-action-btn" data-action="color" data-tip="颜色"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${color};border:1px solid #ccc;vertical-align:middle"></span></button>
                     <button class="tag-action-btn" data-action="rename" data-tip="重命名"><img src="src/icons/edit.svg" style="width:14px;height:14px" /></button>
                     <button class="tag-action-btn" data-action="delete" data-tip="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
                 </div>
@@ -1055,7 +1054,8 @@ function renderTagList() {
         });
         item.querySelector('[data-action="color"]').addEventListener('click', (e) => {
             e.stopPropagation();
-            showTagColorPicker(tagId, item.querySelector('[data-action="color"]'));
+            const colorBtn = item.querySelector('.tag-color-dot');
+            showTagColorPicker(tagId, colorBtn);
         });
         item.querySelector('[data-action="rename"]').addEventListener('click', () => handleRenameTag(tagId));
         item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));

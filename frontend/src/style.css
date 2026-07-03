@@ -514,10 +514,11 @@ body {
 
 .tag-color-dot {
     display: inline-block;
-    width: 8px;
-    height: 8px;
+    width: 13px;
+    height: 13px;
     border-radius: 50%;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
 /* 标签颜色选择器弹窗 */
@@ -548,17 +549,16 @@ body {
 .tag-item .tag-count {
     font-size: 11px;
     color: var(--text-light);
-    background: #f0f0f0;
-    padding: 1px 6px;
-    border-radius: 8px;
-    margin-left: 8px;
+    padding: 1px 0;
+    min-width: 24px;
+    text-align: right;
 }
 
 .tag-item .tag-actions {
     display: flex;
     visibility: hidden;
     gap: 2px;
-    margin-left: 4px;
+    margin-left: 0;
 }
 
 .tag-item:hover .tag-actions { visibility: visible; }
