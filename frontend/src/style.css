@@ -60,10 +60,7 @@ body {
 }
 
 .toolbar-center {
-    position: absolute;
-    left: 220px;
-    top: 0;
-    bottom: 0;
+    flex: 1;
     display: flex;
     align-items: center;
 }
@@ -636,6 +633,28 @@ body {
     text-align: right;
     min-width: 70px;
 }
+
+/* 搜索框（在中间栏） */
+.header-search {
+    margin-left: auto;
+}
+.header-search input {
+    width: 200px;
+    height: 30px;
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 13px;
+    outline: none;
+}
+.header-search input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.15);
+}
+
+/* 搜索模式切换按钮 */
+.search-mode-btn { min-width: 44px; }
+.search-mode-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 #file-list {
     flex: 1;

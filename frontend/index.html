@@ -14,9 +14,6 @@
             <button id="btn-select-folder" class="btn" style="width:95px;display:flex;align-items:center;justify-content:center;gap:4px"><img src="src/icons/folder-open.svg" style="width:16px;height:16px" /> 选择路径</button>
         </div>
         <div class="toolbar-center">
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="搜索文件名或标签..." />
-            </div>
             <span id="current-path" class="current-path" style="display:none"></span>
         </div>
         <div class="toolbar-right">
@@ -61,6 +58,11 @@
                     <span id="selected-count">0 个已选</span>
                     <button id="btn-deselect-all" class="btn btn-sm">取消选择</button>
                     <button id="btn-batch-remove-docs" class="btn btn-sm btn-danger">移除文件</button>
+                    <div class="search-box header-search">
+                        <input type="text" id="search-input" placeholder="搜索文件名或标签..." />
+                    </div>
+                    <button id="btn-search-exact" class="btn btn-sm search-mode-btn" title="精确匹配">精确</button>
+                    <button id="btn-search-fuzzy" class="btn btn-sm search-mode-btn active" title="模糊匹配">模糊</button>
                 </div>
             </div>
             <div id="file-list"></div>

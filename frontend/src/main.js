@@ -29,6 +29,7 @@ let state = {
     filterMode: 'all',
     fileTypeFilter: 'all',
     searchText: '',
+    searchMode: 'fuzzy',  // 'fuzzy'=模糊 'exact'=精确
     viewMode: 'list',
     graphMode: 'document',
     graphNetwork: null,
@@ -706,6 +707,8 @@ function bindEvents() {
     document.getElementById('select-all').addEventListener('change', handleSelectAll);
     document.getElementById('btn-deselect-all').addEventListener('click', handleDeselectAll);
     document.getElementById('btn-batch-remove-docs').addEventListener('click', handleBatchRemoveDocs);
+    document.getElementById('btn-search-exact').addEventListener('click', () => setSearchMode('exact'));
+    document.getElementById('btn-search-fuzzy').addEventListener('click', () => setSearchMode('fuzzy'));
     document.getElementById('btn-clear-filter').addEventListener('click', clearTagFilter);
     document.getElementById('btn-tag-mode').addEventListener('click', toggleTagMatchMode);
     document.getElementById('btn-open-file').addEventListener('click', handleOpenFile);
@@ -775,7 +778,7 @@ async function refreshFileTypeCounts() {
     try {
         if (state.currentFolderPath) {
             const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();
-            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || [], state.tagMatchMode);
+            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || [], state.tagMatchMode, state.searchMode);
             const folderCount = allDocs.filter(d => {
                 const docPath = d.path.toLowerCase();
                 return docPath.startsWith(prefix + '\\') || docPath.startsWith(prefix + '/') || docPath === prefix;
@@ -841,6 +844,13 @@ async function handleSelectFolder() {
 }
 
 // ========== 搜索 ==========
+function setSearchMode(mode) {
+    state.searchMode = mode;
+    document.getElementById('btn-search-exact').classList.toggle('active', mode === 'exact');
+    document.getElementById('btn-search-fuzzy').classList.toggle('active', mode === 'fuzzy');
+    if (state.searchText) handleSearch();
+}
+
 async function handleSearch() {
     state.searchText = document.getElementById('search-input').value.trim();
     await refreshDocuments();
@@ -856,7 +866,7 @@ async function refreshDocuments() {
         } else {
             fileTypes = [state.fileTypeFilter];
         }
-        state.documents = await go.main.App.ListDocuments(state.activeTagIds, state.searchText, untagged, fileTypes, state.tagMatchMode);
+        state.documents = await go.main.App.ListDocuments(state.activeTagIds, state.searchText, untagged, fileTypes, state.tagMatchMode, state.searchMode);
         // 文件夹模式：只显示该文件夹及其子目录下的文件
         if (state.filterMode === 'folder' && state.currentFolderPath) {
             const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();

@@ -175,7 +175,7 @@ func (db *DB) UpsertDocuments(docs []DocumentInput) (int, error) {
 // untagged=true 时只返回没有任何标签的文档
 // fileTypes 为空时不过滤类型，如 ["pdf","docx","xlsx","pptx"]
 // 搜索支持模糊匹配（非连续字符匹配），按匹配度排序
-func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string) ([]Document, error) {
+func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string, searchMode string) ([]Document, error) {
 	query := `SELECT DISTINCT d.id, d.path, d.filename, d.title, d.file_type, d.file_size, d.mod_time, d.created_at, d.indexed_at
 		FROM documents d`
 	args := []interface{}{}
@@ -221,29 +221,39 @@ func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fi
 		where += fmt.Sprintf(` AND d.file_type IN (%s)`, placeholders)
 	}
 
-	// 构建搜索条件（宽松匹配：只要有任何匹配就返回）
+	// 构建搜索条件
 	if searchText != "" {
-		// 使用 OR 连接每个字符，只要有任何字符出现就匹配
-		charConditions := []string{}
-		charArgs := []interface{}{}
-		
-		for _, r := range strings.ToLower(searchText) {
-			char := string(r)
-			charConditions = append(charConditions, "d.filename LIKE ? OR d.path LIKE ?")
-			charArgs = append(charArgs, "%"+char+"%", "%"+char+"%")
+		if searchMode == "exact" {
+			// 精确模式：连续子串匹配
+			like := "%" + strings.ToLower(searchText) + "%"
+			where += ` AND (LOWER(d.filename) LIKE ? OR LOWER(d.path) LIKE ? OR d.id IN (
+				SELECT dt2.document_id FROM document_tags dt2
+				INNER JOIN tags t ON dt2.tag_id = t.id
+				WHERE t.name LIKE ?
+			))`
+			args = append(args, like, like, like)
+		} else {
+			// 模糊模式（默认）：拆字散列匹配
+			charConditions := []string{}
+			charArgs := []interface{}{}
+			
+			for _, r := range strings.ToLower(searchText) {
+				char := string(r)
+				charConditions = append(charConditions, "d.filename LIKE ? OR d.path LIKE ?")
+				charArgs = append(charArgs, "%"+char+"%", "%"+char+"%")
+			}
+			
+			like := "%" + searchText + "%"
+			
+			where += fmt.Sprintf(` AND ((%s) OR d.id IN (
+				SELECT dt2.document_id FROM document_tags dt2
+				INNER JOIN tags t ON dt2.tag_id = t.id
+				WHERE t.name LIKE ?
+			))`, strings.Join(charConditions, " OR "))
+			
+			args = append(args, charArgs...)
+			args = append(args, like)
 		}
-		
-		// 标签匹配
-		like := "%" + searchText + "%"
-		
-		where += fmt.Sprintf(` AND ((%s) OR d.id IN (
-			SELECT dt2.document_id FROM document_tags dt2
-			INNER JOIN tags t ON dt2.tag_id = t.id
-			WHERE t.name LIKE ?
-		))`, strings.Join(charConditions, " OR "))
-		
-		args = append(args, charArgs...)
-		args = append(args, like)
 	}
 
 	rows, err := db.conn.Query(query+joins+where, args...)
