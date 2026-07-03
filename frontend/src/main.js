@@ -707,8 +707,7 @@ function bindEvents() {
     document.getElementById('select-all').addEventListener('change', handleSelectAll);
     document.getElementById('btn-deselect-all').addEventListener('click', handleDeselectAll);
     document.getElementById('btn-batch-remove-docs').addEventListener('click', handleBatchRemoveDocs);
-    document.getElementById('btn-search-exact').addEventListener('click', () => setSearchMode('exact'));
-    document.getElementById('btn-search-fuzzy').addEventListener('click', () => setSearchMode('fuzzy'));
+    document.getElementById('btn-search-exact').addEventListener('click', toggleSearchMode);
     document.getElementById('btn-clear-filter').addEventListener('click', clearTagFilter);
     document.getElementById('btn-tag-mode').addEventListener('click', toggleTagMatchMode);
     document.getElementById('btn-open-file').addEventListener('click', handleOpenFile);
@@ -844,10 +843,11 @@ async function handleSelectFolder() {
 }
 
 // ========== 搜索 ==========
-function setSearchMode(mode) {
-    state.searchMode = mode;
-    document.getElementById('btn-search-exact').classList.toggle('active', mode === 'exact');
-    document.getElementById('btn-search-fuzzy').classList.toggle('active', mode === 'fuzzy');
+function toggleSearchMode() {
+    state.searchMode = state.searchMode === 'fuzzy' ? 'exact' : 'fuzzy';
+    const btn = document.getElementById('btn-search-exact');
+    btn.textContent = state.searchMode === 'fuzzy' ? '模糊' : '精确';
+    btn.classList.toggle('active', state.searchMode === 'exact');
     if (state.searchText) handleSearch();
 }
 
