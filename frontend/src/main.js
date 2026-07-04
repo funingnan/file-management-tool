@@ -1339,7 +1339,7 @@ async function handleDeleteTag(tagId) {
     if (actions.dataset.confirming === 'true') {
         try {
             await go.main.App.DeleteTag(tagId);
-            await refreshTags(); await refreshDocuments();
+            await refreshTags(); state.tagCache = {}; await refreshDocuments();
             if (state.selectedDocId) await selectDocument(state.selectedDocId);
             showToast(`已删除标签「${tag.name}」`);
         } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
@@ -1357,7 +1357,7 @@ async function handleDeleteTag(tagId) {
     actions.querySelectorAll('button')[0].addEventListener('click', async () => {
         try {
             await go.main.App.DeleteTag(tagId);
-            await refreshTags(); await refreshDocuments();
+            await refreshTags(); state.tagCache = {}; await refreshDocuments();
             if (state.selectedDocId) await selectDocument(state.selectedDocId);
             showToast(`已删除标签「${tag.name}」`);
         } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
@@ -1409,7 +1409,7 @@ function startInlineEdit(tagId, currentName) {
         try {
             await go.main.App.RenameTag(tagId, newName);
             editingTagId = null;
-            await refreshTags(); await refreshDocuments();
+            await refreshTags(); state.tagCache = {}; await refreshDocuments();
             if (state.selectedDocId) await selectDocument(state.selectedDocId);
         } catch (err) { showToast('重命名失败: ' + err, 'error'); cancelInlineEdit(tagId); }
     });
