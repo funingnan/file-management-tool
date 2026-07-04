@@ -1138,9 +1138,27 @@ function renderTagList() {
 
     // 右键菜单
     container.addEventListener('contextmenu', (e) => {
-        if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header')) return;
+        if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header') || e.target.closest('.tag-group-input-wrap')) return;
         e.preventDefault();
-        showGroupInput();
+        const wrap = document.createElement('div');
+        wrap.className = 'tag-group-input-wrap';
+        wrap.innerHTML = '<input type="text" class="tag-group-input" placeholder="输入分组名称..." />';
+        const clicked = e.target.closest('.tag-item, .tag-group-header');
+        if (clicked && clicked.nextSibling) {
+            clicked.parentNode.insertBefore(wrap, clicked.nextSibling);
+        } else {
+            document.getElementById('tag-list').appendChild(wrap);
+        }
+        const input = wrap.querySelector('input');
+        input.focus();
+        function confirm() {
+            const name = input.value.trim();
+            if (!name) { wrap.remove(); return; }
+            wrap.remove();
+            showToast('分组「' + name + '」已创建，拖拽标签即可移入');
+        }
+        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') wrap.remove(); });
+        input.addEventListener('blur', () => setTimeout(() => { if (!wrap.contains(document.activeElement)) wrap.remove(); }, 200));
     });
 }
 
@@ -1158,50 +1176,6 @@ function renderTagItem(tag) {
     `;
 }
 
-function showGroupInput() {
-    document.querySelectorAll('.tag-group-input-wrap').forEach(el => el.remove());
-    const container = document.getElementById('tag-list');
-    const wrap = document.createElement('div');
-    wrap.className = 'tag-group-input-wrap';
-    wrap.innerHTML = '<input type="text" class="tag-group-input" placeholder="输入分组名称..." />';
-    container.insertBefore(wrap, container.firstChild);
-    const input = wrap.querySelector('input');
-    input.focus();
-    function confirm() {
-        const name = input.value.trim();
-        if (!name) { wrap.remove(); return; }
-        wrap.remove();
-        showToast('分组「' + name + '」已创建，拖拽标签即可移入');
-    }
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') wrap.remove(); });
-    input.addEventListener('blur', () => setTimeout(() => { if (!wrap.contains(document.activeElement)) wrap.remove(); }, 200));
-}
-
-
-
-
-async function toggleTagFilter(tagId) {
-    const idx = state.activeTagIds.indexOf(tagId);
-    if (idx === -1) state.activeTagIds.push(tagId); else state.activeTagIds.splice(idx, 1);
-    if (state.activeTagIds.length === 0) state.filterMode = 'all';
-    document.getElementById('btn-clear-filter').style.visibility = state.filterMode !== 'all' ? 'visible' : 'hidden';
-    renderTagList();
-    await refreshDocuments();
-    updateDocCount();
-}
-
-function clearTagFilter() {
-    state.activeTagIds = [];
-    state.filterMode = 'all';
-    state.fileTypeFilter = 'all';
-    document.getElementById('btn-clear-filter').style.visibility = 'hidden';
-    document.querySelectorAll('#file-type-filter .type-item').forEach(el => el.classList.remove('active'));
-    const allItem = document.querySelector('#file-type-filter .type-item[data-type="all"]');
-    if (allItem) allItem.classList.add('active');
-    renderTagList();
-    updatePathDisplay();
-    refreshDocuments();
-}
 
 // ========== 路径显示 ==========
 function updatePathDisplay() {
