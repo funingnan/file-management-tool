@@ -1057,7 +1057,8 @@ function renderTagList() {
             const colorBtn = item.querySelector('.tag-color-dot');
             showTagColorPicker(tagId, colorBtn);
         });
-        item.querySelector('[data-action="rename"]').addEventListener('click', () => handleRenameTag(tagId));
+        item.querySelector('[data-action="rename"]').addEventListener('click', (e) => { e.stopPropagation(); handleRenameTag(tagId); });
+        item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
         item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));
     });
 }
@@ -1343,13 +1344,62 @@ async function handleDeleteTag(tagId) {
 async function handleRenameTag(tagId) {
     const tag = state.allTags.find(t => t.id === tagId);
     if (!tag) return;
-    const newName = prompt('重命名标签:', tag.name);
-    if (!newName || newName.trim() === tag.name) return;
-    try {
-        await go.main.App.RenameTag(tagId, newName.trim());
-        await refreshTags(); await refreshDocuments();
-        if (state.selectedDocId) await selectDocument(state.selectedDocId);
-    } catch (err) { showToast('重命名失败: ' + err, 'error'); }
+    startInlineEdit(tagId, tag.name);
+}
+
+// ========== 内联编辑标签名 ==========
+let editingTagId = null;
+
+function startInlineEdit(tagId, currentName) {
+    if (editingTagId) cancelInlineEdit(editingTagId);
+    editingTagId = tagId;
+    
+    const item = document.querySelector(`.tag-item[data-tag-id="${tagId}"]`);
+    if (!item) return;
+    
+    const nameSpan = item.querySelector('.tag-name');
+    nameSpan.dataset.origHtml = nameSpan.innerHTML;
+    
+    nameSpan.innerHTML = `<input type="text" class="tag-rename-input" value="${escapeHtml(currentName)}" style="width:${Math.max(currentName.length * 8 + 20, 60)}px;height:22px;font-size:13px;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none" />`;
+    
+    const actions = item.querySelector('.tag-actions');
+    actions.dataset.origHtml = actions.innerHTML;
+    actions.innerHTML = `
+        <button class="tag-action-btn tag-rename-confirm" data-tip="确认" style="color:#27AE60;font-size:16px;font-weight:bold">✓</button>
+        <button class="tag-action-btn tag-rename-cancel" data-tip="取消" style="color:#D13438;font-size:16px;font-weight:bold">✕</button>
+    `;
+    
+    const input = nameSpan.querySelector('.tag-rename-input');
+    input.focus();
+    input.select();
+    
+    actions.querySelector('.tag-rename-confirm').addEventListener('click', async () => {
+        const newName = input.value.trim();
+        if (!newName || newName === currentName) { cancelInlineEdit(tagId); return; }
+        try {
+            await go.main.App.RenameTag(tagId, newName);
+            editingTagId = null;
+            await refreshTags(); await refreshDocuments();
+            if (state.selectedDocId) await selectDocument(state.selectedDocId);
+        } catch (err) { showToast('重命名失败: ' + err, 'error'); }
+    });
+    
+    actions.querySelector('.tag-rename-cancel').addEventListener('click', () => cancelInlineEdit(tagId));
+    
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') actions.querySelector('.tag-rename-confirm').click();
+        if (e.key === 'Escape') actions.querySelector('.tag-rename-cancel').click();
+    });
+}
+
+function cancelInlineEdit(tagId) {
+    const item = document.querySelector(`.tag-item[data-tag-id="${tagId}"]`);
+    if (!item) return;
+    const nameSpan = item.querySelector('.tag-name');
+    const actions = item.querySelector('.tag-actions');
+    if (nameSpan.dataset.origHtml) { nameSpan.innerHTML = nameSpan.dataset.origHtml; delete nameSpan.dataset.origHtml; }
+    if (actions.dataset.origHtml) { actions.innerHTML = actions.dataset.origHtml; delete actions.dataset.origHtml; }
+    if (editingTagId === tagId) editingTagId = null;
 }
 
 // ========== 打开文件 ==========
