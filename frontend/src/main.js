@@ -757,7 +757,7 @@ function handleFileTypeFilter(item) {
 
 async function refreshFileTypeCounts() {
     try {
-        const counts = await go.main.App.GetFileTypeCounts();
+        const counts = await go.main.App.GetFileTypeCounts(state.currentFolderPath);
         let total = 0;
         state.settings.enabledTypes.forEach(ft => {
             const cnt = counts[ft] || 0;
@@ -769,7 +769,7 @@ async function refreshFileTypeCounts() {
         if (allEl) allEl.textContent = total;
     } catch (err) { /* ignore */ }
     try {
-        const untagged = await go.main.App.GetUntaggedCount(state.settings.enabledTypes || []);
+        const untagged = await go.main.App.GetUntaggedCount(state.settings.enabledTypes || [], state.currentFolderPath);
         const el = document.getElementById('untagged-count');
         if (el) el.textContent = untagged;
     } catch (err) { /* ignore */ }

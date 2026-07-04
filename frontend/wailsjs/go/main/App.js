@@ -50,8 +50,8 @@ export function GetDocumentTagsByPath(arg1) {
   return window['go']['main']['App']['GetDocumentTagsByPath'](arg1);
 }
 
-export function GetFileTypeCounts() {
-  return window['go']['main']['App']['GetFileTypeCounts']();
+export function GetFileTypeCounts(arg1) {
+  return window['go']['main']['App']['GetFileTypeCounts'](arg1);
 }
 
 export function GetSettings() {
@@ -66,8 +66,8 @@ export function GetTagGraph() {
   return window['go']['main']['App']['GetTagGraph']();
 }
 
-export function GetUntaggedCount(arg1) {
-  return window['go']['main']['App']['GetUntaggedCount'](arg1);
+export function GetUntaggedCount(arg1, arg2) {
+  return window['go']['main']['App']['GetUntaggedCount'](arg1, arg2);
 }
 
 export function ImportDatabase() {

@@ -216,8 +216,8 @@ func (a *App) GetDocumentCount() (int, error) {
 }
 
 // GetUntaggedCount 获取无标签文档数
-func (a *App) GetUntaggedCount(fileTypes []string) (int, error) {
-	return a.db.CountUntaggedDocuments(fileTypes)
+func (a *App) GetUntaggedCount(fileTypes []string, folderPath string) (int, error) {
+	return a.db.CountUntaggedDocuments(fileTypes, folderPath)
 }
 
 // RemoveDocument 从列表移除文档（不删真实文件）
@@ -232,8 +232,8 @@ func (a *App) RemoveDocuments(docIDs []int64) (int, error) {
 }
 
 // GetFileTypeCounts 获取各文件类型数量
-func (a *App) GetFileTypeCounts() (map[string]int, error) {
-	return a.db.CountByFileType()
+func (a *App) GetFileTypeCounts(folderPath string) (map[string]int, error) {
+	return a.db.CountByFileType(folderPath)
 }
 
 // GetSupportedTypes 获取所有支持的文件类型

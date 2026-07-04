@@ -524,9 +524,14 @@ func (db *DB) CountDocuments() (int, error) {
 }
 
 // CountUntaggedDocuments 统计无标签文档数（可按文件类型过滤）
-func (db *DB) CountUntaggedDocuments(fileTypes []string) (int, error) {
-	query := `SELECT COUNT(*) FROM documents WHERE id NOT IN (SELECT document_id FROM document_tags)`
+func (db *DB) CountUntaggedDocuments(fileTypes []string, folderPath string) (int, error) {
+	query := `SELECT COUNT(*) FROM documents d WHERE d.id NOT IN (SELECT document_id FROM document_tags)`
 	args := []interface{}{}
+	if folderPath != "" {
+		prefix := strings.ReplaceAll(strings.TrimRight(folderPath, "/\\")+"/", "\\", "\\\\")
+		query += ` AND NOT (d.path LIKE ? AND d.id NOT IN (SELECT document_id FROM document_tags))`
+		args = append(args, prefix+"%")
+	}
 	if len(fileTypes) > 0 {
 		placeholders := ""
 		for i, ft := range fileTypes {
@@ -605,8 +610,13 @@ func (db *DB) DeleteDocuments(docIDs []int64) (int64, error) {
 		placeholders[i] = "?"
 		args[i] = id
 	}
+	inClause := strings.Join(placeholders, ",")
+	// 先删除标签关联，再删文档
+	if _, err := db.conn.Exec(fmt.Sprintf(`DELETE FROM document_tags WHERE document_id IN (%s)`, inClause), args...); err != nil {
+		return 0, err
+	}
 	result, err := db.conn.Exec(
-		fmt.Sprintf(`DELETE FROM documents WHERE id IN (%s)`, strings.Join(placeholders, ",")),
+		fmt.Sprintf(`DELETE FROM documents WHERE id IN (%s)`, inClause),
 		args...,
 	)
 	if err != nil {
@@ -651,8 +661,17 @@ func (db *DB) UpsertDocumentFromPath(path string) (*Document, error) {
 }
 
 // CountByFileType 按文件类型统计数量
-func (db *DB) CountByFileType() (map[string]int, error) {
-	rows, err := db.conn.Query(`SELECT file_type, COUNT(*) FROM documents GROUP BY file_type`)
+func (db *DB) CountByFileType(folderPath string) (map[string]int, error) {
+	query := `SELECT file_type, COUNT(*) FROM documents d`
+	args := []interface{}{}
+	if folderPath != "" {
+		prefix := strings.ReplaceAll(strings.TrimRight(folderPath, "/\\")+"/", "\\", "\\\\")
+		query += ` WHERE NOT (d.path LIKE ? AND d.id NOT IN (SELECT document_id FROM document_tags))`
+		args = append(args, prefix+"%")
+	}
+	query += ` GROUP BY file_type`
+	
+	rows, err := db.conn.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

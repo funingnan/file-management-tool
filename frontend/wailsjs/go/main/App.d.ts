@@ -27,7 +27,7 @@ export function GetDocumentGraph():Promise<database.GraphData>;
 
 export function GetDocumentTagsByPath(arg1:string):Promise<Array<database.Tag>>;
 
-export function GetFileTypeCounts():Promise<Record<string, number>>;
+export function GetFileTypeCounts(arg1:string):Promise<Record<string, number>>;
 
 export function GetSettings():Promise<main.Settings>;
 
@@ -35,7 +35,7 @@ export function GetSupportedTypes():Promise<Array<string>>;
 
 export function GetTagGraph():Promise<database.GraphData>;
 
-export function GetUntaggedCount(arg1:Array<string>):Promise<number>;
+export function GetUntaggedCount(arg1:Array<string>,arg2:string):Promise<number>;
 
 export function ImportDatabase():Promise<boolean>;
 
