@@ -522,6 +522,18 @@ body {
 }
 
 /* 标签颜色选择器弹窗 */
+/* 分组操作按钮 */
+.group-action-btn {
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 3px;
+    border-radius: 3px;
+    color: var(--text-light);
+    opacity: 0.6;
+    user-select: none;
+}
+.group-action-btn:hover { opacity: 1; color: var(--text); background: #e0e0e0; }
+
 .tag-color-picker {
     display: flex;
     flex-wrap: wrap;

@@ -1058,7 +1058,10 @@ function renderTagList() {
             <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">${escapeHtml(groupName)}</span>
-                <span class="group-count">${groups[groupName].length}</span>
+                <span class="group-actions">
+                    <span class="group-action-btn" data-action="rename-group" title="重命名">✎</span>
+                    <span class="group-action-btn" data-action="delete-group" title="删除分组">✖</span>
+                </span>
             </div>
             <div class="tag-group-body ${collapsed}">`;
         groups[groupName].forEach(tag => {
@@ -1088,7 +1091,8 @@ function renderTagList() {
 
     // 绑定事件
     container.querySelectorAll('.tag-group-header').forEach(header => {
-        header.addEventListener('click', () => {
+        header.addEventListener('click', (e) => {
+            if (e.target.closest('.group-action-btn')) return;
             const group = header.dataset.group;
             if (state.collapsedGroups.has(group)) {
                 state.collapsedGroups.delete(group);
@@ -1097,6 +1101,31 @@ function renderTagList() {
             }
             renderTagList();
         });
+        const renameBtn = header.querySelector('[data-action="rename-group"]');
+        if (renameBtn) {
+            renameBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const group = header.dataset.group;
+                startGroupRename(group, header);
+            });
+        }
+        const deleteBtn = header.querySelector('[data-action="delete-group"]');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const group = header.dataset.group;
+                if (confirm('确定要删除分组「' + group + '」吗？标签将移回未分组')) {
+                    // 将所有该分组的标签移回未分组
+                    Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
+                        go.main.App.SetTagGroup(t.id, '')
+                    )).then(() => {
+                        const idx = state.groups.indexOf(group);
+                        if (idx >= 0) state.groups.splice(idx, 1);
+                        refreshTags();
+                    });
+                }
+            });
+        }
     });
 
     container.querySelectorAll('[data-tag-id]').forEach(item => {
@@ -1113,7 +1142,7 @@ function renderTagList() {
             showTagColorPicker(tagId, item.querySelector('.tag-color-dot'));
         });
         item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
-        item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));
+        
         // 拖拽支持
         item.draggable = true;
         item.addEventListener('dragstart', (e) => {
@@ -1154,12 +1183,38 @@ function renderTagItem(tag) {
     return `
         <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}" draggable="true">
             <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
-            <div class="tag-actions">
-                <button class="tag-action-btn" data-action="delete" data-tip=""><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
-            </div>
-            <span class="tag-count">${tag.count}</span>
         </div>
     `;
+}
+
+function startGroupRename(group, headerEl) {
+    const nameSpan = headerEl.querySelector('.group-name');
+    const orig = nameSpan.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = group;
+    input.style.cssText = 'flex:1;height:20px;font-size:12px;font-weight:600;border:1px solid var(--primary);border-radius:3px;outline:none;padding:0 4px';
+    nameSpan.innerHTML = '';
+    nameSpan.appendChild(input);
+    input.focus();
+    input.select();
+    input.addEventListener('blur', () => {
+        const newName = input.value.trim();
+        if (newName && newName !== group) {
+            // 更新所有该分组标签的分组名
+            const idx = state.groups.indexOf(group);
+            if (idx >= 0) { state.groups[idx] = newName; state.groups.sort(); }
+            Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
+                go.main.App.SetTagGroup(t.id, newName)
+            )).then(() => refreshTags());
+        } else {
+            nameSpan.textContent = orig;
+        }
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') { nameSpan.textContent = orig; input.blur(); }
+    });
 }
 
 function showGroupInput() {
