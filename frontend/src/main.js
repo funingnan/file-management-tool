@@ -1056,7 +1056,6 @@ function renderTagList() {
             const colorBtn = item.querySelector('.tag-color-dot');
             showTagColorPicker(tagId, colorBtn);
         });
-        item.querySelector('[data-action="rename"]').addEventListener('click', (e) => { e.stopPropagation(); handleRenameTag(tagId); });
         item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
         item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));
     });
