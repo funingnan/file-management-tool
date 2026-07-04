@@ -36,6 +36,8 @@ let state = {
     allTags: [],
     settings: { enabledTypes: ['pdf','docx','xlsx','pptx'] },
     tagCache: {},  // docId → tags HTML 缓存
+    groups: [],    // 自定义分组名称列表
+    collapsedGroups: new Set(), // 折叠状态
 };
 
 // ========== 初始化 ==========
@@ -1040,6 +1042,8 @@ function renderTagList() {
             ungrouped.push(tag);
         }
     });
+    // 加入自定义空分组
+    state.groups.forEach(g => { if (!groups[g]) groups[g] = []; });
 
     // 折叠状态
     if (!state.collapsedGroups) state.collapsedGroups = new Set();
@@ -1175,6 +1179,11 @@ function showGroupInput() {
         const name = input.value.trim();
         if (!name) { wrap.remove(); return; }
         wrap.remove();
+        if (!state.groups.includes(name)) {
+            state.groups.push(name);
+            state.groups.sort();
+        }
+        renderTagList();
         showToast('分组「' + name + '」已创建，拖拽标签即可移入');
     }
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') wrap.remove(); });
