@@ -999,8 +999,8 @@ body {
 .debug-zones .file-info { background: rgba(255, 105, 180, 0.15); }
 
 /* ========== 即时 tooltip（所有 data-tip 元素） ========== */
-[data-tip] { position: relative; }
-[data-tip]::after {
+[data-tip]:not([data-tip=""]) { position: relative; }
+[data-tip]:not([data-tip=""])::after {
     content: attr(data-tip);
     position: absolute;
     bottom: -28px;
@@ -1017,7 +1017,7 @@ body {
     transition: opacity 0s;
     z-index: 999;
 }
-[data-tip]:hover::after {
+[data-tip]:not([data-tip=""]):hover::after {
     opacity: 1;
 }
 
