@@ -1035,7 +1035,7 @@ function renderTagList() {
             <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
                 <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
                 <div class="tag-actions">
-                    <button class="tag-action-btn" data-action="delete" data-tip="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
+                    <button class="tag-action-btn" data-action="delete" data-tip=""><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
                 </div>
                 <span class="tag-count">${tag.count}</span>
             </div>
@@ -1330,13 +1330,48 @@ function showTagColorPicker(tagId, btnEl) {
 // ========== 标签操作 ==========
 async function handleDeleteTag(tagId) {
     const tag = state.allTags.find(t => t.id === tagId);
-    if (!tag || !confirm(`确定要删除标签「${tag.name}」吗？`)) return;
-    try {
-        await go.main.App.DeleteTag(tagId);
-        await refreshTags(); await refreshDocuments();
-        if (state.selectedDocId) await selectDocument(state.selectedDocId);
-        showToast(`已删除标签「${tag.name}」`);
-    } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
+    if (!tag) return;
+    
+    const item = document.querySelector(`.tag-item[data-tag-id="${tagId}"]`);
+    if (!item) return;
+    
+    const actions = item.querySelector('.tag-actions');
+    if (actions.dataset.confirming === 'true') {
+        try {
+            await go.main.App.DeleteTag(tagId);
+            await refreshTags(); await refreshDocuments();
+            if (state.selectedDocId) await selectDocument(state.selectedDocId);
+            showToast(`已删除标签「${tag.name}」`);
+        } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
+        delete actions.dataset.confirming;
+        return;
+    }
+    
+    actions.dataset.confirming = 'true';
+    actions.dataset.origHtml = actions.innerHTML;
+    actions.innerHTML = `
+        <button class="tag-action-btn" style="color:#D13438;font-size:16px;font-weight:bold">✓</button>
+        <button class="tag-action-btn" style="color:#27AE60;font-size:16px;font-weight:bold">✕</button>
+    `;
+    
+    actions.querySelectorAll('button')[0].addEventListener('click', async () => {
+        try {
+            await go.main.App.DeleteTag(tagId);
+            delete actions.dataset.confirming;
+            delete actions.dataset.origHtml;
+            await refreshTags(); await refreshDocuments();
+            if (state.selectedDocId) await selectDocument(state.selectedDocId);
+            showToast(`已删除标签「${tag.name}」`);
+        } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
+    });
+    
+    actions.querySelectorAll('button')[1].addEventListener('click', () => {
+        if (actions.dataset.origHtml) {
+            actions.innerHTML = actions.dataset.origHtml;
+            delete actions.dataset.origHtml;
+        }
+        delete actions.dataset.confirming;
+    });
 }
 
 async function handleRenameTag(tagId) {
