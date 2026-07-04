@@ -1358,12 +1358,15 @@ function startInlineEdit(tagId, currentName) {
     const nameSpan = item.querySelector('.tag-name');
     nameSpan.dataset.origHtml = nameSpan.innerHTML;
     
+    // 保留颜色圆点，只替换文字为输入框
+    const dot = nameSpan.querySelector('.tag-color-dot');
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'tag-rename-input';
     input.value = currentName;
-    input.style.cssText = `width:${Math.max(currentName.length * 8 + 20, 60)}px;height:22px;font-size:13px;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none`;
+    input.style.cssText = `width:${Math.max(currentName.length * 8 + 20, 60)}px;height:17px;font-size:13px;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;line-height:normal;vertical-align:middle`;
     nameSpan.innerHTML = '';
+    if (dot) nameSpan.appendChild(dot.cloneNode(true));
     nameSpan.appendChild(input);
     
     input.focus();
