@@ -1269,11 +1269,10 @@ async function handleBatchRemoveDocs() {
         state.multiSelectedIds.clear();
         document.getElementById('select-all').checked = false;
         state.tagCache = {};
-        // 异步刷新（不阻塞UI）
-        refreshDocuments();
-        refreshTags();
-        refreshFileTypeCounts();
-        updateDocCount();
+        await refreshDocuments();
+        await refreshTags();
+        await refreshFileTypeCounts();
+        await updateDocCount();
         showToast(`已移除 ${removed} 个文件`);
     } catch (err) { showToast('批量移除失败: ' + err, 'error'); }
 }
