@@ -1033,7 +1033,7 @@ function renderTagList() {
         const color = getTagColor(tag);
         return `
             <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
-                <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span># ${escapeHtml(tag.name)}</span>
+                <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
                 <div class="tag-actions">
                     <button class="tag-action-btn" data-action="rename" data-tip="重命名"><img src="src/icons/edit.svg" style="width:14px;height:14px" /></button>
                     <button class="tag-action-btn" data-action="delete" data-tip="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
