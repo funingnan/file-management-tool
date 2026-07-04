@@ -1138,27 +1138,38 @@ function renderTagList() {
 
     // 右键菜单
     container.addEventListener('contextmenu', (e) => {
-        if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header') || e.target.closest('.tag-group-input-wrap')) return;
+        if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header')) return;
         e.preventDefault();
-        const wrap = document.createElement('div');
-        wrap.className = 'tag-group-input-wrap';
-        wrap.innerHTML = '<input type="text" class="tag-group-input" placeholder="输入分组名称..." />';
+        // 直接插入一个可编辑的分组头
+        const container = document.getElementById('tag-list');
+        const header = document.createElement('div');
+        header.className = 'tag-group-header';
+        header.innerHTML = '<span class="group-arrow">▼</span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" /><span class="group-count">0</span>';
         const clicked = e.target.closest('.tag-item, .tag-group-header');
         if (clicked && clicked.nextSibling) {
-            clicked.parentNode.insertBefore(wrap, clicked.nextSibling);
+            clicked.parentNode.insertBefore(header, clicked.nextSibling);
         } else {
-            document.getElementById('tag-list').appendChild(wrap);
+            container.appendChild(header);
         }
-        const input = wrap.querySelector('input');
+        const input = header.querySelector('input');
         input.focus();
         function confirm() {
             const name = input.value.trim();
-            if (!name) { wrap.remove(); return; }
-            wrap.remove();
+            if (!name) { header.remove(); return; }
+            header.innerHTML = '<span class="group-arrow">▼</span><span class="group-name">' + name + '</span><span class="group-count">0</span>';
+            header.dataset.group = name;
+            // 重新绑定点击折叠事件
+            header.addEventListener('click', function() {
+                const body = this.nextElementSibling;
+                if (body && body.classList.contains('tag-group-body')) {
+                    body.classList.toggle('collapsed');
+                    this.querySelector('.group-arrow').textContent = body.classList.contains('collapsed') ? '▶' : '▼';
+                }
+            });
             showToast('分组「' + name + '」已创建，拖拽标签即可移入');
         }
-        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') wrap.remove(); });
-        input.addEventListener('blur', () => setTimeout(() => { if (!wrap.contains(document.activeElement)) wrap.remove(); }, 200));
+        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') header.remove(); });
+        input.addEventListener('blur', () => setTimeout(() => { if (!header.contains(document.activeElement)) confirm(); }, 200));
     });
 }
 
