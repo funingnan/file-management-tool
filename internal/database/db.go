@@ -24,7 +24,7 @@ func New(dataDir string) (*DB, error) {
 	}
 
 	dbPath := filepath.Join(dataDir, "data.db")
-	conn, err := sql.Open("sqlite", dbPath+"?_journal_mode=WAL&_busy_timeout=5000")
+	conn, err := sql.Open("sqlite", dbPath+"?_journal_mode=WAL&_busy_timeout=30000&_txlock=immediate")
 	if err != nil {
 		return nil, fmt.Errorf("打开数据库失败: %w", err)
 	}

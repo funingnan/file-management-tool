@@ -769,7 +769,20 @@ async function refreshFileTypeCounts() {
         if (allEl) allEl.textContent = total;
     } catch (err) { /* ignore */ }
     try {
-        const untagged = await go.main.App.GetUntaggedCount(state.settings.enabledTypes || []);
+        let untagged = 0;
+        if (state.currentFolderPath) {
+            // 文件夹模式下，只统计文件夹内的无标签文件
+            const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();
+            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || [], state.tagMatchMode, state.searchMode);
+            untagged = allDocs.filter(d => {
+                const docPath = d.path.toLowerCase();
+                if (!docPath.startsWith(prefix + '\\') && !docPath.startsWith(prefix + '/') && docPath !== prefix) return false;
+                // 检查是否有标签
+                return !d.tags || d.tags.length === 0;
+            }).length;
+        } else {
+            untagged = await go.main.App.GetUntaggedCount(state.settings.enabledTypes || []);
+        }
         const el = document.getElementById('untagged-count');
         if (el) el.textContent = untagged;
     } catch (err) { /* ignore */ }
