@@ -1350,8 +1350,8 @@ async function handleDeleteTag(tagId) {
     actions.dataset.confirming = 'true';
     actions.dataset.origHtml = actions.innerHTML;
     actions.innerHTML = `
-        <button class="tag-action-btn" style="color:#D13438;font-size:14px;font-weight:bold;padding:2px 6px">✓ 确认</button>
-        <button class="tag-action-btn" style="color:#27AE60;font-size:14px;font-weight:bold;padding:2px 6px">✕ 取消</button>
+        <button class="tag-action-btn" style="color:#D13438;font-size:16px;font-weight:bold">✓</button>
+        <button class="tag-action-btn" style="color:#27AE60;font-size:16px;font-weight:bold">✕</button>
     `;
     
     actions.querySelectorAll('button')[0].addEventListener('click', async () => {
