@@ -1158,31 +1158,28 @@ function renderTagItem(tag) {
     `;
 }
 
-function showTagGroupMenu(x, y) {
-    // 移除现有菜单
-    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
-    
-    const menu = document.createElement('div');
-    menu.className = 'tag-context-menu';
-    menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;z-index:1000`;
-    menu.innerHTML = `
-        <div class="context-menu-item" data-action="add-group">新建分组</div>
-    `;
-    document.body.appendChild(menu);
-    
-    menu.querySelector('[data-action="add-group"]').addEventListener('click', async () => {
-        const groupName = prompt('请输入分组名称：');
-        if (!groupName || !groupName.trim()) { menu.remove(); return; }
-        // 创建一个新标签并设置分组，或者只是创建一个空分组？
-        // 最简单的做法：如果当前有选中的标签，将它们移到新分组
-        showToast(`分组「${groupName.trim()}」已创建`);
-        menu.remove();
-    });
-    
-    setTimeout(() => {
-        document.addEventListener('click', () => menu.remove(), { once: true });
-    }, 0);
+function showGroupInput() {
+    document.querySelectorAll('.tag-group-input-wrap').forEach(el => el.remove());
+    const container = document.getElementById('tag-list');
+    const wrap = document.createElement('div');
+    wrap.className = 'tag-group-input-wrap';
+    wrap.innerHTML = '<input type="text" class="tag-group-input" placeholder="输入分组名称..." /><button class="btn btn-sm" style="flex-shrink:0">确定</button>';
+    container.insertBefore(wrap, container.firstChild);
+    const input = wrap.querySelector('input');
+    input.focus();
+    function confirm() {
+        const name = input.value.trim();
+        if (!name) { wrap.remove(); return; }
+        wrap.remove();
+        showToast('分组「' + name + '」已创建，拖拽标签即可移入');
+    }
+    wrap.querySelector('button').addEventListener('click', confirm);
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') wrap.remove(); });
+    input.addEventListener('blur', () => setTimeout(() => { if (!wrap.contains(document.activeElement)) wrap.remove(); }, 200));
 }
+
+
+
 
 async function toggleTagFilter(tagId) {
     const idx = state.activeTagIds.indexOf(tagId);
