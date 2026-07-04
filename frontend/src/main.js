@@ -1162,9 +1162,13 @@ function showGroupInput() {
     document.querySelectorAll('.tag-group-input-wrap').forEach(el => el.remove());
     const container = document.getElementById('tag-list');
     const wrap = document.createElement('div');
-    wrap.className = 'tag-group-input-wrap';
-    wrap.innerHTML = '<input type="text" class="tag-group-input" placeholder="输入分组名称..." /><button class="btn btn-sm" style="flex-shrink:0">确定</button>';
-    container.insertBefore(wrap, container.firstChild);
+    wrap.className = 'tag-group-header tag-group-input-wrap';
+    wrap.innerHTML = `
+        <span class="group-arrow">▼</span>
+        <input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;border:none;outline:none;background:transparent;padding:0" />
+        <span class="group-count">0</span>
+    `;
+    container.appendChild(wrap);
     const input = wrap.querySelector('input');
     input.focus();
     function confirm() {
@@ -1173,7 +1177,6 @@ function showGroupInput() {
         wrap.remove();
         showToast('分组「' + name + '」已创建，拖拽标签即可移入');
     }
-    wrap.querySelector('button').addEventListener('click', confirm);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') wrap.remove(); });
     input.addEventListener('blur', () => setTimeout(() => { if (!wrap.contains(document.activeElement)) wrap.remove(); }, 200));
 }
