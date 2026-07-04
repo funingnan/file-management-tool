@@ -1645,48 +1645,17 @@ function showTagColorPicker(tagId, btnEl) {
 async function handleDeleteTag(tagId) {
     const tag = state.allTags.find(t => t.id === tagId);
     if (!tag) return;
-    
     const item = document.querySelector(`.tag-item[data-tag-id="${tagId}"]`);
     if (!item) return;
-    
-    const actions = item.querySelector('.tag-actions');
-    if (actions.dataset.confirming === 'true') {
-        try {
-            await go.main.App.DeleteTag(tagId);
-            await refreshTags(); state.tagCache = {}; await refreshDocuments();
-            if (state.selectedDocId) await selectDocument(state.selectedDocId);
-            showToast(`已删除标签「${tag.name}」`);
-        } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
-        delete actions.dataset.confirming;
-        return;
-    }
-    
-    actions.dataset.confirming = 'true';
-    actions.dataset.origHtml = actions.innerHTML;
-    actions.innerHTML = `
-        <button class="tag-action-btn" style="color:#27AE60">✓</button>
-        <button class="tag-action-btn" style="color:#D13438">✕</button>
-    `;
-    
-    actions.querySelectorAll('button')[0].addEventListener('click', async () => {
-        try {
-            await go.main.App.DeleteTag(tagId);
-            await refreshTags(); state.tagCache = {}; await refreshDocuments();
-            if (state.selectedDocId) await selectDocument(state.selectedDocId);
-            showToast(`已删除标签「${tag.name}」`);
-        } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
+    const nameSpan = item.querySelector('.tag-name');
+    const origHtml = nameSpan.innerHTML;
+    nameSpan.innerHTML = '确定删除? <span style="color:#D13438;cursor:pointer;font-weight:bold" class="inline-confirm">\u2713</span> <span style="color:#27AE60;cursor:pointer;font-weight:bold" class="inline-cancel">\u2715</span>';
+    item.querySelector('.inline-confirm').addEventListener('click', async () => {
+        try { await go.main.App.DeleteTag(tagId); } catch (e) {}
+        await refreshTags(); state.tagCache = {}; await refreshDocuments();
+        if (state.selectedDocId) await selectDocument(state.selectedDocId);
     });
-    
-    actions.querySelectorAll('button')[1].addEventListener('click', () => {
-        delete actions.dataset.confirming;
-        refreshTags(); // 重新渲染以恢复事件绑定
-    });
-}
-
-async function handleRenameTag(tagId) {
-    const tag = state.allTags.find(t => t.id === tagId);
-    if (!tag) return;
-    startInlineEdit(tagId, tag.name);
+    item.querySelector('.inline-cancel').addEventListener('click', () => { nameSpan.innerHTML = origHtml; });
 }
 
 // ========== 内联编辑标签名 ==========
