@@ -752,6 +752,7 @@ body {
     padding: 3px 8px;
     border-radius: 4px;
     line-height: normal;
+    margin-top: 2px;
 }
 
 /* available-tag 参考高度：padding 3px 8px + font-size 12px ≈ 24px */
