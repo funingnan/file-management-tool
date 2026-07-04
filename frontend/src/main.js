@@ -1124,6 +1124,7 @@ function renderDetail(doc) {
                 delete state.tagCache[doc.id];
                 await selectDocument(doc.id);
                 await refreshTags();
+                await refreshFileTypeCounts();
             });
         });
     } else {
