@@ -1054,7 +1054,7 @@ function renderTagList() {
             <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">${escapeHtml(groupName)}</span>
-                <span class="group-count">${groups[groupName].length}</span>
+                
             </div>
             <div class="tag-group-body ${collapsed}">`;
         groups[groupName].forEach(tag => {
@@ -1071,7 +1071,7 @@ function renderTagList() {
             <div class="tag-group-header" data-group="__ungrouped__">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">未分组</span>
-                <span class="group-count">${ungrouped.length}</span>
+                
             </div>
             <div class="tag-group-body ${collapsed}">`;
         ungrouped.forEach(tag => {
@@ -1144,7 +1144,7 @@ function renderTagList() {
         const container = document.getElementById('tag-list');
         const header = document.createElement('div');
         header.className = 'tag-group-header';
-        header.innerHTML = '<span class="group-arrow">▼</span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" /><span class="group-count">0</span>';
+        header.innerHTML = '<span class="group-arrow">▼</span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" />';
         const clicked = e.target.closest('.tag-item, .tag-group-header');
         if (clicked && clicked.nextSibling) {
             clicked.parentNode.insertBefore(header, clicked.nextSibling);
@@ -1156,7 +1156,7 @@ function renderTagList() {
         function confirm() {
             const name = input.value.trim();
             if (!name) { header.remove(); return; }
-            header.innerHTML = '<span class="group-arrow">▼</span><span class="group-name">' + name + '</span><span class="group-count">0</span>';
+            header.innerHTML = '<span class="group-arrow">▼</span><span class="group-name">' + name + '</span>';
             header.dataset.group = name;
             // 重新绑定点击折叠事件
             header.addEventListener('click', function() {
@@ -1182,7 +1182,7 @@ function renderTagItem(tag) {
             <div class="tag-actions">
                 <button class="tag-action-btn" data-action="delete" data-tip=""><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
             </div>
-            <span class="tag-count">${tag.count}</span>
+            
         </div>
     `;
 }
