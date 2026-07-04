@@ -36,8 +36,6 @@ let state = {
     allTags: [],
     settings: { enabledTypes: ['pdf','docx','xlsx','pptx'] },
     tagCache: {},  // docId → tags HTML 缓存
-    groups: [],    // 自定义分组名称列表
-    collapsedGroups: new Set(), // 折叠状态
 };
 
 // ========== 初始化 ==========
@@ -1042,8 +1040,6 @@ function renderTagList() {
             ungrouped.push(tag);
         }
     });
-    // 加入自定义空分组
-    state.groups.forEach(g => { if (!groups[g]) groups[g] = []; });
 
     // 折叠状态
     if (!state.collapsedGroups) state.collapsedGroups = new Set();
@@ -1058,7 +1054,7 @@ function renderTagList() {
             <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">${escapeHtml(groupName)}</span>
-
+                <span class="group-count">${groups[groupName].length}</span>
             </div>
             <div class="tag-group-body ${collapsed}">`;
         groups[groupName].forEach(tag => {
@@ -1075,7 +1071,7 @@ function renderTagList() {
             <div class="tag-group-header" data-group="__ungrouped__">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">未分组</span>
-                
+                <span class="group-count">${ungrouped.length}</span>
             </div>
             <div class="tag-group-body ${collapsed}">`;
         ungrouped.forEach(tag => {
@@ -1097,57 +1093,6 @@ function renderTagList() {
             }
             renderTagList();
         });
-        header.addEventListener('dblclick', (e) => {
-            if (e.target.closest('.group-arrow') || e.target.closest('.group-count')) return;
-            const group = header.dataset.group;
-            if (group !== '__ungrouped__') startGroupRename(group, header);
-        });
-        header.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const group = header.dataset.group;
-            if (group === '__ungrouped__') return;
-            showGroupContextMenu(e.clientX, e.clientY, group);
-        });
-    });;
-        header.addEventListener('dblclick', (e) => {
-            if (e.target.closest('.group-arrow') || e.target.closest('.group-count')) return;
-            const group = header.dataset.group;
-            if (group !== '__ungrouped__') startGroupRename(group, header);
-        });
-        header.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const group = header.dataset.group;
-            if (group === '__ungrouped__') return;
-            showGroupContextMenu(e.clientX, e.clientY, group);
-        });
-    });;
-        const renameBtn = header.querySelector('[data-action="rename-group"]');
-        if (renameBtn) {
-            renameBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const group = header.dataset.group;
-                startGroupRename(group, header);
-            });
-        }
-        const deleteBtn = header.querySelector('[data-action="delete-group"]');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const group = header.dataset.group;
-                if (confirm('确定要删除分组「' + group + '」吗？标签将移回未分组')) {
-                    // 将所有该分组的标签移回未分组
-                    Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
-                        go.main.App.SetTagGroup(t.id, '')
-                    )).then(() => {
-                        const idx = state.groups.indexOf(group);
-                        if (idx >= 0) state.groups.splice(idx, 1);
-                        refreshTags();
-                    });
-                }
-            });
-        }
     });
 
     container.querySelectorAll('[data-tag-id]').forEach(item => {
@@ -1164,15 +1109,7 @@ function renderTagList() {
             showTagColorPicker(tagId, item.querySelector('.tag-color-dot'));
         });
         item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
-        item.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            showTagContextMenu(e.clientX, e.clientY, tagId);
-        });
-        item.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            showTagContextMenu(e.clientX, e.clientY, tagId);
-        });
-        
+        item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));
         // 拖拽支持
         item.draggable = true;
         item.addEventListener('dragstart', (e) => {
@@ -1213,152 +1150,27 @@ function renderTagItem(tag) {
     return `
         <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}" draggable="true">
             <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
+            <div class="tag-actions">
+                <button class="tag-action-btn" data-action="delete" data-tip=""><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
+            </div>
+            <span class="tag-count">${tag.count}</span>
         </div>
     `;
-}
-
-function showTagContextMenu(x, y, tagId) {
-    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
-    const menu = document.createElement('div');
-    menu.className = 'tag-context-menu';
-    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
-    menu.innerHTML = '<div class="context-menu-item" data-action="delete-tag">删除标签</div>';
-    document.body.appendChild(menu);
-    menu.querySelector('[data-action="delete-tag"]').addEventListener('click', () => {
-        menu.remove();
-        handleDeleteTag(tagId);
-    });
-    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
-}
-
-function showGroupContextMenu(x, y, group) {
-    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
-    const menu = document.createElement('div');
-    menu.className = 'tag-context-menu';
-    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
-    menu.innerHTML = '<div class="context-menu-item" data-action="delete-group">删除分组</div>';
-    document.body.appendChild(menu);
-    menu.querySelector('[data-action="delete-group"]').addEventListener('click', () => {
-        menu.remove();
-        const header = document.querySelector('.tag-group-header[data-group="'+group+'"]');
-        if (!header) return;
-        const nameSpan = header.querySelector('.group-name');
-        const origText = nameSpan.textContent;
-        nameSpan.innerHTML = '确认删除"'+group+'"? <span style="color:#D13438;cursor:pointer;font-weight:bold" class="inline-confirm">\u2713</span> <span style="color:#27AE60;cursor:pointer;font-weight:bold" class="inline-cancel">\u2715</span>';
-        header.querySelector('.inline-confirm').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
-                go.main.App.SetTagGroup(t.id, '')
-            ));
-            const idx = state.groups.indexOf(group);
-            if (idx >= 0) state.groups.splice(idx, 1);
-            refreshTags();
-        });
-        header.querySelector('.inline-cancel').addEventListener('click', (e) => {
-            e.stopPropagation();
-            nameSpan.innerHTML = origText;
-        });
-    });
-    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
-}
-
-function showTagContextMenu(x, y, tagId) {
-    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
-    const menu = document.createElement('div');
-    menu.className = 'tag-context-menu';
-    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
-    menu.innerHTML = '<div class="context-menu-item" data-action="delete-tag">删除标签</div>';
-    document.body.appendChild(menu);
-    menu.querySelector('[data-action="delete-tag"]').addEventListener('click', () => {
-        menu.remove();
-        handleDeleteTag(tagId);
-    });
-    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
-}
-
-function showGroupContextMenu(x, y, group) {
-    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
-    const menu = document.createElement('div');
-    menu.className = 'tag-context-menu';
-    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
-    menu.innerHTML = '<div class="context-menu-item" data-action="delete-group">删除分组</div>';
-    document.body.appendChild(menu);
-    menu.querySelector('[data-action="delete-group"]').addEventListener('click', () => {
-        menu.remove();
-        const header = document.querySelector('.tag-group-header[data-group="'+group+'"]');
-        if (!header) return;
-        const nameSpan = header.querySelector('.group-name');
-        const origText = nameSpan.textContent;
-        nameSpan.innerHTML = '确认删除"'+group+'"? <span style="color:#D13438;cursor:pointer;font-weight:bold" class="inline-confirm">\u2713</span> <span style="color:#27AE60;cursor:pointer;font-weight:bold" class="inline-cancel">\u2715</span>';
-        header.querySelector('.inline-confirm').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
-                go.main.App.SetTagGroup(t.id, '')
-            ));
-            const idx = state.groups.indexOf(group);
-            if (idx >= 0) state.groups.splice(idx, 1);
-            refreshTags();
-        });
-        header.querySelector('.inline-cancel').addEventListener('click', (e) => {
-            e.stopPropagation();
-            nameSpan.innerHTML = origText;
-        });
-    });
-    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
-}
-
-function startGroupRename(group, headerEl) {
-    const nameSpan = headerEl.querySelector('.group-name');
-    const orig = nameSpan.textContent;
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = group;
-    input.style.cssText = 'flex:1;height:20px;font-size:12px;font-weight:600;border:1px solid var(--primary);border-radius:3px;outline:none;padding:0 4px';
-    nameSpan.innerHTML = '';
-    nameSpan.appendChild(input);
-    input.focus();
-    input.select();
-    input.addEventListener('blur', () => {
-        const newName = input.value.trim();
-        if (newName && newName !== group) {
-            // 更新所有该分组标签的分组名
-            const idx = state.groups.indexOf(group);
-            if (idx >= 0) { state.groups[idx] = newName; state.groups.sort(); }
-            Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
-                go.main.App.SetTagGroup(t.id, newName)
-            )).then(() => refreshTags());
-        } else {
-            nameSpan.textContent = orig;
-        }
-    });
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') input.blur();
-        if (e.key === 'Escape') { nameSpan.textContent = orig; input.blur(); }
-    });
 }
 
 function showGroupInput() {
     document.querySelectorAll('.tag-group-input-wrap').forEach(el => el.remove());
     const container = document.getElementById('tag-list');
     const wrap = document.createElement('div');
-    wrap.className = 'tag-group-header tag-group-input-wrap';
-    wrap.innerHTML = `
-        <span class="group-arrow">▼</span>
-        <input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;border:none;outline:none;background:transparent;padding:0" />
-        
-    `;
-    container.appendChild(wrap);
+    wrap.className = 'tag-group-input-wrap';
+    wrap.innerHTML = '<input type="text" class="tag-group-input" placeholder="输入分组名称..." />';
+    container.insertBefore(wrap, container.firstChild);
     const input = wrap.querySelector('input');
     input.focus();
     function confirm() {
         const name = input.value.trim();
         if (!name) { wrap.remove(); return; }
         wrap.remove();
-        if (!state.groups.includes(name)) {
-            state.groups.push(name);
-            state.groups.sort();
-        }
-        renderTagList();
         showToast('分组「' + name + '」已创建，拖拽标签即可移入');
     }
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirm(); if (e.key === 'Escape') wrap.remove(); });
@@ -1642,17 +1454,48 @@ function showTagColorPicker(tagId, btnEl) {
 async function handleDeleteTag(tagId) {
     const tag = state.allTags.find(t => t.id === tagId);
     if (!tag) return;
+    
     const item = document.querySelector(`.tag-item[data-tag-id="${tagId}"]`);
     if (!item) return;
-    const nameSpan = item.querySelector('.tag-name');
-    const origHtml = nameSpan.innerHTML;
-    nameSpan.innerHTML = '确定删除? <span style="color:#D13438;cursor:pointer;font-weight:bold" class="inline-confirm">\u2713</span> <span style="color:#27AE60;cursor:pointer;font-weight:bold" class="inline-cancel">\u2715</span>';
-    item.querySelector('.inline-confirm').addEventListener('click', async () => {
-        try { await go.main.App.DeleteTag(tagId); } catch (e) {}
-        await refreshTags(); state.tagCache = {}; await refreshDocuments();
-        if (state.selectedDocId) await selectDocument(state.selectedDocId);
+    
+    const actions = item.querySelector('.tag-actions');
+    if (actions.dataset.confirming === 'true') {
+        try {
+            await go.main.App.DeleteTag(tagId);
+            await refreshTags(); state.tagCache = {}; await refreshDocuments();
+            if (state.selectedDocId) await selectDocument(state.selectedDocId);
+            showToast(`已删除标签「${tag.name}」`);
+        } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
+        delete actions.dataset.confirming;
+        return;
+    }
+    
+    actions.dataset.confirming = 'true';
+    actions.dataset.origHtml = actions.innerHTML;
+    actions.innerHTML = `
+        <button class="tag-action-btn" style="color:#27AE60">✓</button>
+        <button class="tag-action-btn" style="color:#D13438">✕</button>
+    `;
+    
+    actions.querySelectorAll('button')[0].addEventListener('click', async () => {
+        try {
+            await go.main.App.DeleteTag(tagId);
+            await refreshTags(); state.tagCache = {}; await refreshDocuments();
+            if (state.selectedDocId) await selectDocument(state.selectedDocId);
+            showToast(`已删除标签「${tag.name}」`);
+        } catch (err) { showToast('删除标签失败: ' + err, 'error'); }
     });
-    item.querySelector('.inline-cancel').addEventListener('click', () => { nameSpan.innerHTML = origHtml; });
+    
+    actions.querySelectorAll('button')[1].addEventListener('click', () => {
+        delete actions.dataset.confirming;
+        refreshTags(); // 重新渲染以恢复事件绑定
+    });
+}
+
+async function handleRenameTag(tagId) {
+    const tag = state.allTags.find(t => t.id === tagId);
+    if (!tag) return;
+    startInlineEdit(tagId, tag.name);
 }
 
 // ========== 内联编辑标签名 ==========
