@@ -1287,3 +1287,45 @@ body {
     padding: 0;
     font-weight: 600;
 }
+
+/* ========== 标签分组 ========== */
+.tag-group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    background: #f8f8f8;
+    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    user-select: none;
+}
+.tag-group-header:hover { background: #f0f0f0; }
+.tag-group-header.drag-over { background: #ddeeff; }
+.group-arrow { font-size: 10px; width: 14px; flex-shrink: 0; }
+.group-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.group-count { font-size: 11px; color: var(--text-light); margin-right: 4px; }
+.tag-group-body.collapsed { display: none; }
+
+/* 右键菜单 */
+.tag-context-menu {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    padding: 4px 0;
+    min-width: 130px;
+}
+.context-menu-item {
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.context-menu-item:hover { background: #e8eff8; }
+
+/* 拖拽中的标签 */
+.tag-item.dragging { opacity: 0.4; }

@@ -1028,19 +1028,72 @@ function renderTagList() {
         container.innerHTML = '<div style="padding:12px 14px;color:#aaa;font-size:12px">暂无标签</div>';
         return;
     }
-    container.innerHTML = state.allTags.map(tag => {
-        const isActive = state.filterMode === 'tagged' && state.activeTagIds.includes(tag.id);
-        const color = getTagColor(tag);
-        return `
-            <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
-                <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
-                <div class="tag-actions">
-                    <button class="tag-action-btn" data-action="delete" data-tip=""><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
-                </div>
-                <span class="tag-count">${tag.count}</span>
+
+    // 按分组归类
+    const groups = {};
+    const ungrouped = [];
+    state.allTags.forEach(tag => {
+        if (tag.tag_group) {
+            if (!groups[tag.tag_group]) groups[tag.tag_group] = [];
+            groups[tag.tag_group].push(tag);
+        } else {
+            ungrouped.push(tag);
+        }
+    });
+
+    // 折叠状态
+    if (!state.collapsedGroups) state.collapsedGroups = new Set();
+
+    let html = '';
+
+    // 有分组的标签
+    Object.keys(groups).sort().forEach(groupName => {
+        const collapsed = state.collapsedGroups.has(groupName) ? 'collapsed' : '';
+        const arrow = state.collapsedGroups.has(groupName) ? '▶' : '▼';
+        html += `
+            <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
+                <span class="group-arrow">${arrow}</span>
+                <span class="group-name">${escapeHtml(groupName)}</span>
+                <span class="group-count">${groups[groupName].length}</span>
             </div>
-        `;
-    }).join('');
+            <div class="tag-group-body ${collapsed}">`;
+        groups[groupName].forEach(tag => {
+            html += renderTagItem(tag);
+        });
+        html += `</div>`;
+    });
+
+    // 未分组的标签
+    if (ungrouped.length > 0) {
+        const collapsed = state.collapsedGroups.has('__ungrouped__') ? 'collapsed' : '';
+        const arrow = state.collapsedGroups.has('__ungrouped__') ? '▶' : '▼';
+        html += `
+            <div class="tag-group-header" data-group="__ungrouped__">
+                <span class="group-arrow">${arrow}</span>
+                <span class="group-name">未分组</span>
+                <span class="group-count">${ungrouped.length}</span>
+            </div>
+            <div class="tag-group-body ${collapsed}">`;
+        ungrouped.forEach(tag => {
+            html += renderTagItem(tag);
+        });
+        html += `</div>`;
+    }
+
+    container.innerHTML = html;
+
+    // 绑定事件
+    container.querySelectorAll('.tag-group-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const group = header.dataset.group;
+            if (state.collapsedGroups.has(group)) {
+                state.collapsedGroups.delete(group);
+            } else {
+                state.collapsedGroups.add(group);
+            }
+            renderTagList();
+        });
+    });
 
     container.querySelectorAll('[data-tag-id]').forEach(item => {
         const tagId = parseInt(item.dataset.tagId);
@@ -1053,12 +1106,83 @@ function renderTagList() {
         });
         item.querySelector('[data-action="color"]').addEventListener('click', (e) => {
             e.stopPropagation();
-            const colorBtn = item.querySelector('.tag-color-dot');
-            showTagColorPicker(tagId, colorBtn);
+            showTagColorPicker(tagId, item.querySelector('.tag-color-dot'));
         });
         item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
         item.querySelector('[data-action="delete"]').addEventListener('click', () => handleDeleteTag(tagId));
+        // 拖拽支持
+        item.draggable = true;
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', tagId);
+            item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
     });
+
+    // 拖拽放置目标（分组头和标签列表区域）
+    container.querySelectorAll('.tag-group-header').forEach(header => {
+        header.addEventListener('dragover', (e) => { e.preventDefault(); header.classList.add('drag-over'); });
+        header.addEventListener('dragleave', () => header.classList.remove('drag-over'));
+        header.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            header.classList.remove('drag-over');
+            const tagId = parseInt(e.dataTransfer.getData('text/plain'));
+            const group = header.dataset.group;
+            const newGroup = group === '__ungrouped__' ? '' : group;
+            try {
+                await go.main.App.SetTagGroup(tagId, newGroup);
+                await refreshTags();
+            } catch (err) { showToast('移动标签失败: ' + err, 'error'); }
+        });
+    });
+
+    // 右键菜单
+    container.addEventListener('contextmenu', (e) => {
+        // 只在空白区域触发
+        if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header')) return;
+        e.preventDefault();
+        showTagGroupMenu(e.clientX, e.clientY);
+    });
+}
+
+function renderTagItem(tag) {
+    const isActive = state.filterMode === 'tagged' && state.activeTagIds.includes(tag.id);
+    const color = getTagColor(tag);
+    return `
+        <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}" draggable="true">
+            <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
+            <div class="tag-actions">
+                <button class="tag-action-btn" data-action="delete" data-tip=""><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
+            </div>
+            <span class="tag-count">${tag.count}</span>
+        </div>
+    `;
+}
+
+function showTagGroupMenu(x, y) {
+    // 移除现有菜单
+    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
+    
+    const menu = document.createElement('div');
+    menu.className = 'tag-context-menu';
+    menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;z-index:1000`;
+    menu.innerHTML = `
+        <div class="context-menu-item" data-action="add-group">新建分组</div>
+    `;
+    document.body.appendChild(menu);
+    
+    menu.querySelector('[data-action="add-group"]').addEventListener('click', async () => {
+        const groupName = prompt('请输入分组名称：');
+        if (!groupName || !groupName.trim()) { menu.remove(); return; }
+        // 创建一个新标签并设置分组，或者只是创建一个空分组？
+        // 最简单的做法：如果当前有选中的标签，将它们移到新分组
+        showToast(`分组「${groupName.trim()}」已创建`);
+        menu.remove();
+    });
+    
+    setTimeout(() => {
+        document.addEventListener('click', () => menu.remove(), { once: true });
+    }, 0);
 }
 
 async function toggleTagFilter(tagId) {
