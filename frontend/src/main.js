@@ -1350,8 +1350,8 @@ async function handleDeleteTag(tagId) {
     actions.dataset.confirming = 'true';
     actions.dataset.origHtml = actions.innerHTML;
     actions.innerHTML = `
-        <button class="tag-action-btn" style="color:#D13438">✓</button>
-        <button class="tag-action-btn" style="color:#27AE60">✕</button>
+        <button class="tag-action-btn" style="color:#27AE60">✓</button>
+        <button class="tag-action-btn" style="color:#D13438">✕</button>
     `;
     
     actions.querySelectorAll('button')[0].addEventListener('click', async () => {
