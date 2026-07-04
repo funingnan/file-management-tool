@@ -1091,8 +1091,7 @@ function renderTagList() {
 
     // 绑定事件
     container.querySelectorAll('.tag-group-header').forEach(header => {
-        header.addEventListener('click', (e) => {
-            if (e.target.closest('.group-action-btn')) return;
+        header.addEventListener('click', () => {
             const group = header.dataset.group;
             if (state.collapsedGroups.has(group)) {
                 state.collapsedGroups.delete(group);
@@ -1101,6 +1100,19 @@ function renderTagList() {
             }
             renderTagList();
         });
+        header.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.group-arrow') || e.target.closest('.group-count')) return;
+            const group = header.dataset.group;
+            if (group !== '__ungrouped__') startGroupRename(group, header);
+        });
+        header.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const group = header.dataset.group;
+            if (group === '__ungrouped__') return;
+            showGroupContextMenu(e.clientX, e.clientY, group);
+        });
+    });;
         const renameBtn = header.querySelector('[data-action="rename-group"]');
         if (renameBtn) {
             renameBtn.addEventListener('click', (e) => {
@@ -1142,6 +1154,10 @@ function renderTagList() {
             showTagColorPicker(tagId, item.querySelector('.tag-color-dot'));
         });
         item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showTagContextMenu(e.clientX, e.clientY, tagId);
+        });
         
         // 拖拽支持
         item.draggable = true;
@@ -1185,6 +1201,51 @@ function renderTagItem(tag) {
             <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
         </div>
     `;
+}
+
+function showTagContextMenu(x, y, tagId) {
+    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
+    const menu = document.createElement('div');
+    menu.className = 'tag-context-menu';
+    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
+    menu.innerHTML = '<div class="context-menu-item" data-action="delete-tag">删除标签</div>';
+    document.body.appendChild(menu);
+    menu.querySelector('[data-action="delete-tag"]').addEventListener('click', () => {
+        menu.remove();
+        handleDeleteTag(tagId);
+    });
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
+}
+
+function showGroupContextMenu(x, y, group) {
+    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
+    const menu = document.createElement('div');
+    menu.className = 'tag-context-menu';
+    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
+    menu.innerHTML = '<div class="context-menu-item" data-action="delete-group">删除分组</div>';
+    document.body.appendChild(menu);
+    menu.querySelector('[data-action="delete-group"]').addEventListener('click', () => {
+        menu.remove();
+        const header = document.querySelector('.tag-group-header[data-group="'+group+'"]');
+        if (!header) return;
+        const nameSpan = header.querySelector('.group-name');
+        const origText = nameSpan.textContent;
+        nameSpan.innerHTML = '确认删除"'+group+'"? <span style="color:#D13438;cursor:pointer;font-weight:bold" class="inline-confirm">\u2713</span> <span style="color:#27AE60;cursor:pointer;font-weight:bold" class="inline-cancel">\u2715</span>';
+        header.querySelector('.inline-confirm').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
+                go.main.App.SetTagGroup(t.id, '')
+            ));
+            const idx = state.groups.indexOf(group);
+            if (idx >= 0) state.groups.splice(idx, 1);
+            refreshTags();
+        });
+        header.querySelector('.inline-cancel').addEventListener('click', (e) => {
+            e.stopPropagation();
+            nameSpan.innerHTML = origText;
+        });
+    });
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
 }
 
 function startGroupRename(group, headerEl) {
