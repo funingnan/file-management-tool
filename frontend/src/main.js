@@ -1078,7 +1078,7 @@ function renderTagList() {
             <div class="tag-group-header" data-group="__ungrouped__">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">未分组</span>
-                <span class="group-count">${ungrouped.length}</span>
+                
             </div>
             <div class="tag-group-body ${collapsed}">`;
         ungrouped.forEach(tag => {
@@ -1100,6 +1100,19 @@ function renderTagList() {
             }
             renderTagList();
         });
+        header.addEventListener('dblclick', (e) => {
+            if (e.target.closest('.group-arrow') || e.target.closest('.group-count')) return;
+            const group = header.dataset.group;
+            if (group !== '__ungrouped__') startGroupRename(group, header);
+        });
+        header.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const group = header.dataset.group;
+            if (group === '__ungrouped__') return;
+            showGroupContextMenu(e.clientX, e.clientY, group);
+        });
+    });;
         header.addEventListener('dblclick', (e) => {
             if (e.target.closest('.group-arrow') || e.target.closest('.group-count')) return;
             const group = header.dataset.group;
@@ -1154,6 +1167,10 @@ function renderTagList() {
             showTagColorPicker(tagId, item.querySelector('.tag-color-dot'));
         });
         item.addEventListener('dblclick', (e) => { if (!e.target.closest('.tag-action-btn') && !e.target.closest('.tag-color-dot')) handleRenameTag(tagId); });
+        item.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showTagContextMenu(e.clientX, e.clientY, tagId);
+        });
         item.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             showTagContextMenu(e.clientX, e.clientY, tagId);
@@ -1248,6 +1265,51 @@ function showGroupContextMenu(x, y, group) {
     setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
 }
 
+function showTagContextMenu(x, y, tagId) {
+    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
+    const menu = document.createElement('div');
+    menu.className = 'tag-context-menu';
+    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
+    menu.innerHTML = '<div class="context-menu-item" data-action="delete-tag">删除标签</div>';
+    document.body.appendChild(menu);
+    menu.querySelector('[data-action="delete-tag"]').addEventListener('click', () => {
+        menu.remove();
+        handleDeleteTag(tagId);
+    });
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
+}
+
+function showGroupContextMenu(x, y, group) {
+    document.querySelectorAll('.tag-context-menu').forEach(el => el.remove());
+    const menu = document.createElement('div');
+    menu.className = 'tag-context-menu';
+    menu.style.cssText = 'position:fixed;left:'+x+'px;top:'+y+'px;z-index:1000';
+    menu.innerHTML = '<div class="context-menu-item" data-action="delete-group">删除分组</div>';
+    document.body.appendChild(menu);
+    menu.querySelector('[data-action="delete-group"]').addEventListener('click', () => {
+        menu.remove();
+        const header = document.querySelector('.tag-group-header[data-group="'+group+'"]');
+        if (!header) return;
+        const nameSpan = header.querySelector('.group-name');
+        const origText = nameSpan.textContent;
+        nameSpan.innerHTML = '确认删除"'+group+'"? <span style="color:#D13438;cursor:pointer;font-weight:bold" class="inline-confirm">\u2713</span> <span style="color:#27AE60;cursor:pointer;font-weight:bold" class="inline-cancel">\u2715</span>';
+        header.querySelector('.inline-confirm').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await Promise.all(state.allTags.filter(t => t.tag_group === group).map(t =>
+                go.main.App.SetTagGroup(t.id, '')
+            ));
+            const idx = state.groups.indexOf(group);
+            if (idx >= 0) state.groups.splice(idx, 1);
+            refreshTags();
+        });
+        header.querySelector('.inline-cancel').addEventListener('click', (e) => {
+            e.stopPropagation();
+            nameSpan.innerHTML = origText;
+        });
+    });
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
+}
+
 function startGroupRename(group, headerEl) {
     const nameSpan = headerEl.querySelector('.group-name');
     const orig = nameSpan.textContent;
@@ -1286,7 +1348,7 @@ function showGroupInput() {
     wrap.innerHTML = `
         <span class="group-arrow">▼</span>
         <input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;border:none;outline:none;background:transparent;padding:0" />
-        <span class="group-count">0</span>
+        
     `;
     container.appendChild(wrap);
     const input = wrap.querySelector('input');

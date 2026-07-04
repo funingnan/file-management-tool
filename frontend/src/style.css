@@ -1319,7 +1319,7 @@ body {
 .tag-group-header.drag-over { background: #ddeeff; }
 .group-arrow { font-size: 10px; width: 14px; flex-shrink: 0; }
 .group-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.group-count { font-size: 11px; color: var(--text-light); margin-right: 4px; }
+
 .tag-group-body.collapsed { display: none; }
 
 /* 右键菜单 */
