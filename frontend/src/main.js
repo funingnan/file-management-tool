@@ -1138,10 +1138,9 @@ function renderTagList() {
 
     // 右键菜单
     container.addEventListener('contextmenu', (e) => {
-        // 只在空白区域触发
         if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header')) return;
         e.preventDefault();
-        showTagGroupMenu(e.clientX, e.clientY);
+        showGroupInput();
     });
 }
 
