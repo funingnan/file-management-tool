@@ -78,8 +78,8 @@ export function ListDocuments(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['ListDocuments'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
-export function ListTags() {
-  return window['go']['main']['App']['ListTags']();
+export function ListTags(arg1) {
+  return window['go']['main']['App']['ListTags'](arg1);
 }
 
 export function OpenFile(arg1) {

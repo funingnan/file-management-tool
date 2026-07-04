@@ -41,7 +41,7 @@ export function ImportDatabase():Promise<boolean>;
 
 export function ListDocuments(arg1:Array<number>,arg2:string,arg3:boolean,arg4:Array<string>,arg5:string,arg6:string,arg7:string):Promise<Array<database.Document>>;
 
-export function ListTags():Promise<Array<database.TagWithCount>>;
+export function ListTags(arg1:Array<string>):Promise<Array<database.TagWithCount>>;
 
 export function OpenFile(arg1:number):Promise<void>;
 

@@ -243,9 +243,9 @@ func (a *App) GetSupportedTypes() []string {
 
 // ---------- 标签操作 ----------
 
-// ListTags 获取所有标签（含使用次数）
-func (a *App) ListTags() ([]database.TagWithCount, error) {
-	return a.db.ListTags()
+// ListTags 获取所有标签（含使用次数，只统计启用的文件类型）
+func (a *App) ListTags(enabledTypes []string) ([]database.TagWithCount, error) {
+	return a.db.ListTags(enabledTypes)
 }
 
 // AddTagToDocument 给文档添加标签

@@ -358,15 +358,30 @@ func (db *DB) SetTagColor(tagID int64, color string) error {
 	return err
 }
 
-// ListTags 列出所有标签及使用次数
-func (db *DB) ListTags() ([]TagWithCount, error) {
-	rows, err := db.conn.Query(`
-		SELECT t.id, t.name, t.color, COUNT(dt.document_id) as cnt
+// ListTags 列出所有标签及使用次数，只统计启用的文件类型
+func (db *DB) ListTags(enabledTypes []string) ([]TagWithCount, error) {
+	// 构建有效文档子查询：只统计启用的文件类型
+	validDocs := "SELECT document_id FROM document_tags"
+	args := []interface{}{}
+	if len(enabledTypes) > 0 {
+		placeholders := ""
+		for i, ft := range enabledTypes {
+			if i > 0 { placeholders += "," }
+			placeholders += "?"
+			args = append(args, ft)
+		}
+		validDocs = fmt.Sprintf(`SELECT dt.document_id FROM document_tags dt INNER JOIN documents d ON dt.document_id = d.id WHERE d.file_type IN (%s)`, placeholders)
+	}
+	
+	query := fmt.Sprintf(`
+		SELECT t.id, t.name, t.color, (
+			SELECT COUNT(*) FROM (%s) AS dt2 WHERE dt2.tag_id = t.id
+		) as cnt
 		FROM tags t
-		LEFT JOIN document_tags dt ON t.id = dt.tag_id
-		GROUP BY t.id
 		ORDER BY cnt DESC, t.name
-	`)
+	`, validDocs)
+	
+	rows, err := db.conn.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
