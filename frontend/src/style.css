@@ -748,13 +748,13 @@ body {
 }
 
 .file-tag {
-    font-size: 11px;
-    padding: 0 6px;
-    background: var(--tag-bg);
-    color: var(--tag-text);
-    border-radius: 3px;
-    line-height: 16px;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    line-height: normal;
 }
+
+/* available-tag 参考高度：padding 3px 8px + font-size 12px ≈ 24px */
 
 /* 空状态 */
 #empty-state {
