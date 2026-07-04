@@ -113,7 +113,7 @@ async function initTagPicker(filePath) {
 async function tpLoadTags() {
     // 并行加载所有标签和当前文件标签
     const [allTags, currentTags] = await Promise.all([
-        go.main.App.ListTags(state.settings.enabledTypes || []),
+        go.main.App.ListTags(),
         go.main.App.GetDocumentTagsByPath(tpState.filePath),
     ]);
 
@@ -1018,7 +1018,7 @@ async function loadFileTags(docId) {
 
 // ========== 标签面板 ==========
 async function refreshTags() {
-    try { state.allTags = await go.main.App.ListTags(state.settings.enabledTypes || []); renderTagList(); }
+    try { state.allTags = await go.main.App.ListTags(); renderTagList(); }
     catch (err) { console.error('刷新标签失败:', err); }
 }
 

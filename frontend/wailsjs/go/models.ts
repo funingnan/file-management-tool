@@ -53,6 +53,7 @@ export namespace database {
 	    id: number;
 	    name: string;
 	    color: string;
+	    tag_group: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new Tag(source);
@@ -63,6 +64,7 @@ export namespace database {
 	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.color = source["color"];
+	        this.tag_group = source["tag_group"];
 	    }
 	}
 	export class DocumentDetail {
@@ -189,6 +191,7 @@ export namespace database {
 	    id: number;
 	    name: string;
 	    color: string;
+	    tag_group: string;
 	    count: number;
 	
 	    static createFrom(source: any = {}) {
@@ -200,6 +203,7 @@ export namespace database {
 	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.color = source["color"];
+	        this.tag_group = source["tag_group"];
 	        this.count = source["count"];
 	    }
 	}

@@ -28,17 +28,19 @@ type Document struct {
 
 // Tag 表示一个标签
 type Tag struct {
-	ID    int64  `json:"id"`
-	Name  string `json:"name"`
-	Color string `json:"color"`
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Color    string `json:"color"`
+	TagGroup string `json:"tag_group"`
 }
 
 // TagWithCount 带使用次数的标签
 type TagWithCount struct {
-	ID    int64  `json:"id"`
-	Name  string `json:"name"`
-	Color string `json:"color"`
-	Count int    `json:"count"`
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	Color    string `json:"color"`
+	TagGroup string `json:"tag_group"`
+	Count    int    `json:"count"`
 }
 
 // DocumentDetail 文档详情（含标签列表）

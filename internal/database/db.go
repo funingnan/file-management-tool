@@ -99,6 +99,7 @@ func (db *DB) migrate() error {
 	db.conn.Exec(`ALTER TABLE documents ADD COLUMN file_size INTEGER DEFAULT 0`)
 	db.conn.Exec(`ALTER TABLE documents ADD COLUMN mod_time DATETIME DEFAULT CURRENT_TIMESTAMP`)
 	db.conn.Exec(`ALTER TABLE tags ADD COLUMN color TEXT DEFAULT ''`)
+	db.conn.Exec(`ALTER TABLE tags ADD COLUMN tag_group TEXT DEFAULT ''`)
 	return nil
 }
 
@@ -304,7 +305,7 @@ func (db *DB) GetDocument(id int64) (*DocumentDetail, error) {
 	}
 
 	rows, err := db.conn.Query(
-		`SELECT t.id, t.name, t.color FROM tags t
+		`SELECT t.id, t.name, t.color, t.tag_group FROM tags t
 		 INNER JOIN document_tags dt ON t.id = dt.tag_id
 		 WHERE dt.document_id = ? ORDER BY t.name`, id,
 	)
@@ -315,7 +316,7 @@ func (db *DB) GetDocument(id int64) (*DocumentDetail, error) {
 
 	for rows.Next() {
 		var tag Tag
-		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Color); err != nil {
+		if err := rows.Scan(&tag.ID, &tag.Name, &tag.Color, &tag.TagGroup); err != nil {
 			return nil, err
 		}
 		doc.Tags = append(doc.Tags, tag)
@@ -345,7 +346,7 @@ func (db *DB) EnsureTag(name string) (int64, error) {
 // GetTag 获取单个标签
 func (db *DB) GetTag(tagID int64) (*Tag, error) {
 	var t Tag
-	err := db.conn.QueryRow(`SELECT id, name, color FROM tags WHERE id = ?`, tagID).Scan(&t.ID, &t.Name, &t.Color)
+	err := db.conn.QueryRow(`SELECT id, name, color, tag_group FROM tags WHERE id = ?`, tagID).Scan(&t.ID, &t.Name, &t.Color, &t.TagGroup)
 	if err != nil {
 		return nil, err
 	}
@@ -358,30 +359,21 @@ func (db *DB) SetTagColor(tagID int64, color string) error {
 	return err
 }
 
-// ListTags 列出所有标签及使用次数，只统计启用的文件类型
-func (db *DB) ListTags(enabledTypes []string) ([]TagWithCount, error) {
-	// 构建有效文档子查询：只统计启用的文件类型
-	validDocs := "SELECT document_id FROM document_tags"
-	args := []interface{}{}
-	if len(enabledTypes) > 0 {
-		placeholders := ""
-		for i, ft := range enabledTypes {
-			if i > 0 { placeholders += "," }
-			placeholders += "?"
-			args = append(args, ft)
-		}
-		validDocs = fmt.Sprintf(`SELECT dt.document_id FROM document_tags dt INNER JOIN documents d ON dt.document_id = d.id WHERE d.file_type IN (%s)`, placeholders)
-	}
-	
-	query := fmt.Sprintf(`
-		SELECT t.id, t.name, t.color, (
-			SELECT COUNT(*) FROM (%s) AS dt2 WHERE dt2.tag_id = t.id
-		) as cnt
+// SetTagGroup 设置标签分组
+func (db *DB) SetTagGroup(tagID int64, group string) error {
+	_, err := db.conn.Exec(`UPDATE tags SET tag_group = ? WHERE id = ?`, group, tagID)
+	return err
+}
+
+// ListTags 列出所有标签及使用次数
+func (db *DB) ListTags() ([]TagWithCount, error) {
+	rows, err := db.conn.Query(`
+		SELECT t.id, t.name, t.color, t.tag_group, COUNT(dt.document_id) as cnt
 		FROM tags t
+		LEFT JOIN document_tags dt ON t.id = dt.tag_id
+		GROUP BY t.id
 		ORDER BY cnt DESC, t.name
-	`, validDocs)
-	
-	rows, err := db.conn.Query(query, args...)
+	`)
 	if err != nil {
 		return nil, err
 	}
@@ -390,7 +382,7 @@ func (db *DB) ListTags(enabledTypes []string) ([]TagWithCount, error) {
 	var tags []TagWithCount
 	for rows.Next() {
 		var t TagWithCount
-		if err := rows.Scan(&t.ID, &t.Name, &t.Color, &t.Count); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.Color, &t.TagGroup, &t.Count); err != nil {
 			return nil, err
 		}
 		tags = append(tags, t)

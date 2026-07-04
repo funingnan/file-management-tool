@@ -243,9 +243,9 @@ func (a *App) GetSupportedTypes() []string {
 
 // ---------- 标签操作 ----------
 
-// ListTags 获取所有标签（含使用次数，只统计启用的文件类型）
-func (a *App) ListTags(enabledTypes []string) ([]database.TagWithCount, error) {
-	return a.db.ListTags(enabledTypes)
+// ListTags 获取所有标签（含使用次数）
+func (a *App) ListTags() ([]database.TagWithCount, error) {
+	return a.db.ListTags()
 }
 
 // AddTagToDocument 给文档添加标签
@@ -287,6 +287,11 @@ func (a *App) RenameTag(tagID int64, newName string) error {
 // SetTagColor 设置标签颜色
 func (a *App) SetTagColor(tagID int64, color string) error {
 	return a.db.SetTagColor(tagID, color)
+}
+
+// SetTagGroup 设置标签分组
+func (a *App) SetTagGroup(tagID int64, group string) error {
+	return a.db.SetTagGroup(tagID, group)
 }
 
 // ---------- 系统操作 ----------

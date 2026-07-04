@@ -78,8 +78,8 @@ export function ListDocuments(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['ListDocuments'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
-export function ListTags(arg1) {
-  return window['go']['main']['App']['ListTags'](arg1);
+export function ListTags() {
+  return window['go']['main']['App']['ListTags']();
 }
 
 export function OpenFile(arg1) {
@@ -124,6 +124,10 @@ export function SelectFolder() {
 
 export function SetTagColor(arg1, arg2) {
   return window['go']['main']['App']['SetTagColor'](arg1, arg2);
+}
+
+export function SetTagGroup(arg1, arg2) {
+  return window['go']['main']['App']['SetTagGroup'](arg1, arg2);
 }
 
 export function SetTagPickerMode(arg1) {
