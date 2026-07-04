@@ -1180,37 +1180,29 @@ async function handleAddTag() {
     const tagName = input.value.trim();
     if (!tagName) return;
 
+    // 统一收集目标文件ID：多选优先，否则取当前查看的文件
+    let targetIds;
+    if (state.multiSelectedIds.size > 0) {
+        targetIds = Array.from(state.multiSelectedIds);
+    } else if (state.selectedDocId) {
+        targetIds = [state.selectedDocId];
+    } else {
+        return;
+    }
+
     try {
-        if (state.multiSelectedIds.size > 0) {
-            // 多选模式：给所有勾选的文件添加标签（不刷新文件列表，保持选择状态）
-            await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), tagName);
-            for (const id of state.multiSelectedIds) {
-                delete state.tagCache[id];
-                // 从服务器获取最新标签并更新DOM
-                try {
-                    const doc = await go.main.App.GetDocument(id);
-                    const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)};border-color:${getTagColor(t)}40">${escapeHtml(t.name)}</span>`).join('');
-                    state.tagCache[id] = tagsHtml;
-                    const el = document.getElementById('file-tags-' + id);
-                    if (el) el.innerHTML = tagsHtml;
-                } catch (e) { /* ignore */ }
-            }
-        } else if (state.selectedDocId) {
-            // 单选模式：给当前选中的文件添加标签
-            await go.main.App.AddTagToDocument(state.selectedDocId, tagName);
-            delete state.tagCache[state.selectedDocId];
-            // 异步更新详情面板和文件列表标签（不阻塞UI）
-            const docId = state.selectedDocId;
-            go.main.App.GetDocument(docId).then(doc => {
+        await go.main.App.BatchAddTag(targetIds, tagName);
+        targetIds.forEach(id => delete state.tagCache[id]);
+        // 异步更新所有目标文件的标签显示和详情面板
+        targetIds.forEach(id => {
+            go.main.App.GetDocument(id).then(doc => {
                 const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)};border-color:${getTagColor(t)}40">${escapeHtml(t.name)}</span>`).join('');
-                state.tagCache[docId] = tagsHtml;
-                const el = document.getElementById('file-tags-' + docId);
+                state.tagCache[id] = tagsHtml;
+                const el = document.getElementById('file-tags-' + id);
                 if (el) el.innerHTML = tagsHtml;
-                renderDetail(doc);
+                if (id === state.selectedDocId) renderDetail(doc);
             }).catch(() => {});
-        } else {
-            return;
-        }
+        });
         input.value = '';
         hideAutocomplete();
         refreshFileTypeCounts();
