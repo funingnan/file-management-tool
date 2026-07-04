@@ -1035,7 +1035,6 @@ function renderTagList() {
             <div class="tag-item ${isActive ? 'active' : ''}" data-tag-id="${tag.id}">
                 <span class="tag-name"><span class="tag-color-dot" style="background:${color}" data-action="color"></span> ${escapeHtml(tag.name)}</span>
                 <div class="tag-actions">
-                    <button class="tag-action-btn" data-action="rename" data-tip="重命名"><img src="src/icons/edit.svg" style="width:14px;height:14px" /></button>
                     <button class="tag-action-btn" data-action="delete" data-tip="删除"><img src="src/icons/delete.svg" style="width:14px;height:14px" /></button>
                 </div>
                 <span class="tag-count">${tag.count}</span>
@@ -1360,20 +1359,19 @@ function startInlineEdit(tagId, currentName) {
     const nameSpan = item.querySelector('.tag-name');
     nameSpan.dataset.origHtml = nameSpan.innerHTML;
     
-    nameSpan.innerHTML = `<input type="text" class="tag-rename-input" value="${escapeHtml(currentName)}" style="width:${Math.max(currentName.length * 8 + 20, 60)}px;height:22px;font-size:13px;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none" />`;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tag-rename-input';
+    input.value = currentName;
+    input.style.cssText = `width:${Math.max(currentName.length * 8 + 20, 60)}px;height:22px;font-size:13px;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none`;
+    nameSpan.innerHTML = '';
+    nameSpan.appendChild(input);
     
-    const actions = item.querySelector('.tag-actions');
-    actions.dataset.origHtml = actions.innerHTML;
-    actions.innerHTML = `
-        <button class="tag-action-btn tag-rename-confirm" data-tip="确认" style="color:#27AE60;font-size:16px;font-weight:bold">✓</button>
-        <button class="tag-action-btn tag-rename-cancel" data-tip="取消" style="color:#D13438;font-size:16px;font-weight:bold">✕</button>
-    `;
-    
-    const input = nameSpan.querySelector('.tag-rename-input');
     input.focus();
     input.select();
     
-    actions.querySelector('.tag-rename-confirm').addEventListener('click', async () => {
+    input.addEventListener('blur', async () => {
+        if (editingTagId !== tagId) return;
         const newName = input.value.trim();
         if (!newName || newName === currentName) { cancelInlineEdit(tagId); return; }
         try {
@@ -1381,14 +1379,12 @@ function startInlineEdit(tagId, currentName) {
             editingTagId = null;
             await refreshTags(); await refreshDocuments();
             if (state.selectedDocId) await selectDocument(state.selectedDocId);
-        } catch (err) { showToast('重命名失败: ' + err, 'error'); }
+        } catch (err) { showToast('重命名失败: ' + err, 'error'); cancelInlineEdit(tagId); }
     });
     
-    actions.querySelector('.tag-rename-cancel').addEventListener('click', () => cancelInlineEdit(tagId));
-    
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') actions.querySelector('.tag-rename-confirm').click();
-        if (e.key === 'Escape') actions.querySelector('.tag-rename-cancel').click();
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') cancelInlineEdit(tagId);
     });
 }
 
@@ -1396,9 +1392,7 @@ function cancelInlineEdit(tagId) {
     const item = document.querySelector(`.tag-item[data-tag-id="${tagId}"]`);
     if (!item) return;
     const nameSpan = item.querySelector('.tag-name');
-    const actions = item.querySelector('.tag-actions');
     if (nameSpan.dataset.origHtml) { nameSpan.innerHTML = nameSpan.dataset.origHtml; delete nameSpan.dataset.origHtml; }
-    if (actions.dataset.origHtml) { actions.innerHTML = actions.dataset.origHtml; delete actions.dataset.origHtml; }
     if (editingTagId === tagId) editingTagId = null;
 }
 
