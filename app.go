@@ -227,13 +227,8 @@ func (a *App) RemoveDocument(docID int64) error {
 
 // RemoveDocuments 批量移除文档
 func (a *App) RemoveDocuments(docIDs []int64) (int, error) {
-	count := 0
-	for _, id := range docIDs {
-		if err := a.db.RemoveDocument(id); err == nil {
-			count++
-		}
-	}
-	return count, nil
+	count, err := a.db.DeleteDocuments(docIDs)
+	return int(count), err
 }
 
 // GetFileTypeCounts 获取各文件类型数量

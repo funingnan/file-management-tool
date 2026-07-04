@@ -1193,21 +1193,20 @@ async function handleAddTag() {
             // 单选模式：给当前选中的文件添加标签
             await go.main.App.AddTagToDocument(state.selectedDocId, tagName);
             delete state.tagCache[state.selectedDocId];
-            // 更新文件列表中的标签显示
-            try {
-                const doc = await go.main.App.GetDocument(state.selectedDocId);
+            // 异步更新详情面板和文件列表标签（不阻塞UI）
+            const docId = state.selectedDocId;
+            go.main.App.GetDocument(docId).then(doc => {
                 const tagsHtml = doc.tags.map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)};border-color:${getTagColor(t)}40">${escapeHtml(t.name)}</span>`).join('');
-                state.tagCache[state.selectedDocId] = tagsHtml;
-                const el = document.getElementById('file-tags-' + state.selectedDocId);
+                state.tagCache[docId] = tagsHtml;
+                const el = document.getElementById('file-tags-' + docId);
                 if (el) el.innerHTML = tagsHtml;
-            } catch (e) { /* ignore */ }
-            await selectDocument(state.selectedDocId);
+                renderDetail(doc);
+            }).catch(() => {});
         } else {
             return;
         }
         input.value = '';
         hideAutocomplete();
-        await refreshTags();
     } catch (err) { showToast('添加标签失败: ' + err, 'error'); }
 }
 
@@ -1266,10 +1265,12 @@ async function handleBatchRemoveDocs() {
         const removed = await go.main.App.RemoveDocuments(Array.from(state.multiSelectedIds));
         state.multiSelectedIds.clear();
         document.getElementById('select-all').checked = false;
-        await refreshDocuments();
-        await refreshTags();
-        await refreshFileTypeCounts();
-        await updateDocCount();
+        state.tagCache = {};
+        // 异步刷新（不阻塞UI）
+        refreshDocuments();
+        refreshTags();
+        refreshFileTypeCounts();
+        updateDocCount();
         showToast(`已移除 ${removed} 个文件`);
     } catch (err) { showToast('批量移除失败: ' + err, 'error'); }
 }

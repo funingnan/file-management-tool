@@ -594,6 +594,27 @@ func (db *DB) RemoveDocument(docID int64) error {
 	return err
 }
 
+// DeleteDocuments 批量删除文档（单SQL，单事务）
+func (db *DB) DeleteDocuments(docIDs []int64) (int64, error) {
+	if len(docIDs) == 0 {
+		return 0, nil
+	}
+	placeholders := make([]string, len(docIDs))
+	args := make([]interface{}, len(docIDs))
+	for i, id := range docIDs {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	result, err := db.conn.Exec(
+		fmt.Sprintf(`DELETE FROM documents WHERE id IN (%s)`, strings.Join(placeholders, ",")),
+		args...,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 // GetDocumentByPath 通过文件路径获取文档
 func (db *DB) GetDocumentByPath(path string) (*Document, error) {
 	var doc Document
