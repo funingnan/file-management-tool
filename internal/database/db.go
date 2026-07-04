@@ -175,7 +175,7 @@ func (db *DB) UpsertDocuments(docs []DocumentInput) (int, error) {
 // untagged=true 时只返回没有任何标签的文档
 // fileTypes 为空时不过滤类型，如 ["pdf","docx","xlsx","pptx"]
 // 搜索支持模糊匹配（非连续字符匹配），按匹配度排序
-func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string, searchMode string) ([]Document, error) {
+func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string, searchMode string, folderPath string) ([]Document, error) {
 	query := `SELECT DISTINCT d.id, d.path, d.filename, d.title, d.file_type, d.file_size, d.mod_time, d.created_at, d.indexed_at
 		FROM documents d`
 	args := []interface{}{}
@@ -219,6 +219,13 @@ func (db *DB) ListDocuments(tagIDs []int64, searchText string, untagged bool, fi
 			args = append(args, ft)
 		}
 		where += fmt.Sprintf(` AND d.file_type IN (%s)`, placeholders)
+	}
+
+	// 排除所选路径下未打标签的文件（文件夹模式以外的全局浏览时）
+	if folderPath != "" && !untagged {
+		prefix := strings.ReplaceAll(strings.TrimRight(folderPath, "/\\")+"/", "\\", "\\\\")
+		where += ` AND NOT (d.path LIKE ? AND d.id NOT IN (SELECT document_id FROM document_tags))`
+		args = append(args, prefix+"%")
 	}
 
 	// 构建搜索条件

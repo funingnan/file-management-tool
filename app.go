@@ -201,8 +201,8 @@ func (a *App) SelectFolder() (string, error) {
 // ---------- 文档操作 ----------
 
 // ListDocuments 查询文档列表
-func (a *App) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string, searchMode string) ([]database.Document, error) {
-	return a.db.ListDocuments(tagIDs, searchText, untagged, fileTypes, tagMatchMode, searchMode)
+func (a *App) ListDocuments(tagIDs []int64, searchText string, untagged bool, fileTypes []string, tagMatchMode string, searchMode string, folderPath string) ([]database.Document, error) {
+	return a.db.ListDocuments(tagIDs, searchText, untagged, fileTypes, tagMatchMode, searchMode, folderPath)
 }
 
 // GetDocument 获取文档详情（含标签）

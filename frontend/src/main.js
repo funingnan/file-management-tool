@@ -777,7 +777,7 @@ async function refreshFileTypeCounts() {
     try {
         if (state.currentFolderPath) {
             const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();
-            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || [], state.tagMatchMode, state.searchMode);
+            const allDocs = await go.main.App.ListDocuments([], '', false, state.settings.enabledTypes || [], state.tagMatchMode, state.searchMode, '');
             const folderCount = allDocs.filter(d => {
                 const docPath = d.path.toLowerCase();
                 return docPath.startsWith(prefix + '\\') || docPath.startsWith(prefix + '/') || docPath === prefix;
@@ -866,7 +866,7 @@ async function refreshDocuments() {
         } else {
             fileTypes = [state.fileTypeFilter];
         }
-        state.documents = await go.main.App.ListDocuments(state.activeTagIds, state.searchText, untagged, fileTypes, state.tagMatchMode, state.searchMode);
+        state.documents = await go.main.App.ListDocuments(state.activeTagIds, state.searchText, untagged, fileTypes, state.tagMatchMode, state.searchMode, state.currentFolderPath);
         // 文件夹模式：只显示该文件夹及其子目录下的文件
         if (state.filterMode === 'folder' && state.currentFolderPath) {
             const prefix = state.currentFolderPath.replace(/[\/\\]$/, '').toLowerCase();
