@@ -1140,17 +1140,21 @@ function renderDetail(doc) {
         }).join('');
         availableContainer.querySelectorAll('.available-tag').forEach(el => {
             el.addEventListener('click', async () => {
+                const tagName = el.dataset.tagName;
+                let targetIds;
                 if (state.multiSelectedIds.size > 0) {
-                    await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), el.dataset.tagName);
-                    state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
+                    targetIds = Array.from(state.multiSelectedIds);
                 } else {
-                    await go.main.App.AddTagToDocument(doc.id, el.dataset.tagName);
-                    delete state.tagCache[doc.id];
-                    await selectDocument(doc.id);
+                    targetIds = [doc.id];
                 }
+                await go.main.App.BatchAddTag(targetIds, tagName);
+                targetIds.forEach(id => delete state.tagCache[id]);
                 await refreshTags();
                 await refreshDocuments();
                 await refreshFileTypeCounts();
+                if (targetIds.length === 1 && targetIds[0] === doc.id) {
+                    await selectDocument(doc.id);
+                }
             });
         });
     } else {
