@@ -556,7 +556,7 @@ body {
 .tag-item:hover .tag-actions { visibility: visible; }
 
 .tag-item .tag-count {
-    font-size: 11px;
+    font-size: 13px;
     color: var(--text-light);
     min-width: 24px;
     text-align: right;
