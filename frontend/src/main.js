@@ -1058,10 +1058,7 @@ function renderTagList() {
             <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
                 <span class="group-arrow">${arrow}</span>
                 <span class="group-name">${escapeHtml(groupName)}</span>
-                <span class="group-actions">
-                    <span class="group-action-btn" data-action="rename-group" title="重命名">✎</span>
-                    <span class="group-action-btn" data-action="delete-group" title="删除分组">✖</span>
-                </span>
+
             </div>
             <div class="tag-group-body ${collapsed}">`;
         groups[groupName].forEach(tag => {
