@@ -1140,11 +1140,17 @@ function renderDetail(doc) {
         }).join('');
         availableContainer.querySelectorAll('.available-tag').forEach(el => {
             el.addEventListener('click', async () => {
-                await go.main.App.AddTagToDocument(doc.id, el.dataset.tagName);
-                delete state.tagCache[doc.id];
-                await selectDocument(doc.id);
+                if (state.multiSelectedIds.size > 0) {
+                    await go.main.App.BatchAddTag(Array.from(state.multiSelectedIds), el.dataset.tagName);
+                    state.multiSelectedIds.forEach(id => delete state.tagCache[id]);
+                } else {
+                    await go.main.App.AddTagToDocument(doc.id, el.dataset.tagName);
+                    delete state.tagCache[doc.id];
+                    await selectDocument(doc.id);
+                }
                 await refreshTags();
                 await refreshDocuments();
+                await refreshFileTypeCounts();
             });
         });
     } else {
@@ -1207,6 +1213,7 @@ async function handleAddTag() {
         }
         input.value = '';
         hideAutocomplete();
+        refreshFileTypeCounts();
     } catch (err) { showToast('添加标签失败: ' + err, 'error'); }
 }
 
