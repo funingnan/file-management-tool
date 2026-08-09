@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshFileTypeCounts();
     await updateDocCount();
     bindEvents();
+    // 网络图谱为实验功能，暂隐藏入口（代码保留，后续测试调整好再开放）
+    document.getElementById('btn-view-graph').style.display = 'none';
 
     // 恢复上次选择的文件夹路径
     if (state.settings.currentFolderPath) {
