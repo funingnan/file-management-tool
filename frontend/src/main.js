@@ -34,6 +34,7 @@ let state = {
     graphMode: 'document',
     graphNetwork: null,
     allTags: [],
+    localGroups: new Set(),  // 前端本地新建、尚未持久化的空分组名
     settings: { enabledTypes: ['pdf','docx','xlsx','pptx'] },
     tagCache: {},  // docId → tags HTML 缓存
 };
@@ -394,6 +395,20 @@ async function saveSettings() {
 // 版本历史数据
 const VERSION_HISTORY = [
     {
+        version: 'v0.3.0',
+        date: '2026-08-10',
+        changes: [
+            '修复右键新建标签组多次闪烁（事件监听器累积改为事件委托）',
+            '修复新建分组无法拖入标签、折叠未分组后分组消失（本地分组状态持久化 + 拖拽事件委托）',
+            '修复点击左侧标签无法筛选文件（补齐缺失的 toggleTagFilter）',
+            '修复新建标签不显示在左侧标签栏（添加标签后刷新标签列表）',
+            '修复标签组展开/收起箭头大小不一致（SVG 三角形统一旋转）',
+            '全局拦截浏览器默认右键菜单（刷新/另存为/打印等），输入框与选中文本除外',
+            '详情面板重构：文件名/路径最多两行显示、超出省略；文件名与图标底部对齐',
+            '详情面板标签区预留两行，超出后显示「展开/折叠」按钮',
+        ]
+    },
+    {
         version: 'v0.1.10',
         date: '2026-06-22',
         changes: [
@@ -696,6 +711,13 @@ function renderFileTypeFilter() {
 
 // ========== 事件绑定 ==========
 function bindEvents() {
+    // 全局拦截默认右键菜单（WebView2 浏览器菜单：刷新/另存为/打印等），输入框和选中文本除外
+    document.addEventListener('contextmenu', (e) => {
+        if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+        if (window.getSelection().toString()) return;
+        e.preventDefault();
+    });
+
     document.getElementById('btn-scan').addEventListener('click', handleScan);
     document.getElementById('btn-select-folder').addEventListener('click', handleSelectFolder);
     document.getElementById('search-input').addEventListener('input', debounce(handleSearch, 300));
@@ -720,6 +742,56 @@ function bindEvents() {
     document.getElementById('modal-overlay').addEventListener('click', (e) => { if (e.target === e.currentTarget) { hideModal(); document.getElementById('btn-settings').blur(); } });
     document.getElementById('btn-modal-close').addEventListener('click', () => { hideModal(); document.getElementById('btn-settings').blur(); });
     document.getElementById('btn-settings').addEventListener('click', showSettingsModal);
+
+    // 标签列表空白处右键 → 新建分组（事件委托，一次性绑定，避免 renderTagList 重复绑定累积）
+    document.getElementById('tag-list').addEventListener('contextmenu', (e) => {
+        if (e.target.closest('.tag-item, .tag-group-header, .tag-group-input')) return;
+        e.preventDefault();
+        // 直接插入一个可编辑的分组头
+        const container = document.getElementById('tag-list');
+        const header = document.createElement('div');
+        header.className = 'tag-group-header';
+        header.innerHTML = '<span class="group-arrow"><svg viewBox="0 0 10 10" width="10" height="10"><path d="M3 1 L9 5 L3 9 Z" fill="currentColor"/></svg></span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" />';
+        container.appendChild(header);
+        const input = header.querySelector('input');
+        input.focus();
+        function confirm() {
+            const name = input.value.trim();
+            if (!name) { header.remove(); return; }
+            // 存入本地分组，由 renderTagList 统一渲染（重渲染不丢失，且自动获得折叠/拖拽事件）
+            state.localGroups.add(name);
+            renderTagList();
+            showToast('分组「' + name + '」已创建，拖拽标签即可移入');
+        }
+        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') header.remove(); });
+        input.addEventListener('blur', () => setTimeout(() => { if (!header.contains(document.activeElement)) confirm(); }, 200));
+    });
+
+    // 标签拖入分组（事件委托，一次性绑定，动态新建的分组头也自动生效）
+    const tagListEl = document.getElementById('tag-list');
+    tagListEl.addEventListener('dragover', (e) => {
+        const header = e.target.closest('.tag-group-header');
+        if (header) { e.preventDefault(); header.classList.add('drag-over'); }
+    });
+    tagListEl.addEventListener('dragleave', (e) => {
+        const header = e.target.closest('.tag-group-header');
+        if (header && !header.contains(e.relatedTarget)) header.classList.remove('drag-over');
+    });
+    tagListEl.addEventListener('drop', async (e) => {
+        const header = e.target.closest('.tag-group-header');
+        if (!header) return;
+        e.preventDefault();
+        header.classList.remove('drag-over');
+        const tagId = parseInt(e.dataTransfer.getData('text/plain'));
+        if (isNaN(tagId)) return;
+        const group = header.dataset.group;
+        const newGroup = group === '__ungrouped__' ? '' : group;
+        try {
+            await go.main.App.SetTagGroup(tagId, newGroup);
+            if (newGroup) state.localGroups.delete(newGroup); // 分组已有数据库承载
+            await refreshTags();
+        } catch (err) { showToast('移动标签失败: ' + err, 'error'); }
+    });
     // 点击空白关闭批量标签选择器
 }
 
@@ -751,6 +823,35 @@ function handleFileTypeFilter(item) {
     }
 
     document.getElementById('btn-clear-filter').style.visibility = 'hidden';
+    renderTagList();
+    refreshDocuments();
+}
+
+// ========== 清除筛选（btn-clear-filter） ==========
+function clearTagFilter() {
+    state.filterMode = 'all';
+    state.fileTypeFilter = 'all';
+    state.activeTagIds = [];
+    document.getElementById('btn-clear-filter').style.visibility = 'hidden';
+    // 恢复「所有文件」高亮
+    document.querySelectorAll('#file-type-filter .type-item').forEach(el => el.classList.remove('active'));
+    const allItem = document.querySelector('#file-type-filter .type-item[data-type="all"]');
+    if (allItem) allItem.classList.add('active');
+    updatePathDisplay();
+    renderTagList();
+    refreshDocuments();
+}
+
+// ========== 标签筛选（点击左侧标签切换） ==========
+function toggleTagFilter(tagId) {
+    const idx = state.activeTagIds.indexOf(tagId);
+    if (idx >= 0) {
+        state.activeTagIds.splice(idx, 1);
+    } else {
+        state.activeTagIds.push(tagId);
+    }
+    // 有筛选时显示「清除」按钮
+    document.getElementById('btn-clear-filter').style.visibility = state.activeTagIds.length > 0 ? 'visible' : 'hidden';
     renderTagList();
     refreshDocuments();
 }
@@ -1024,7 +1125,7 @@ async function refreshTags() {
 
 function renderTagList() {
     const container = document.getElementById('tag-list');
-    if (!state.allTags || state.allTags.length === 0) {
+    if ((!state.allTags || state.allTags.length === 0) && (!state.localGroups || state.localGroups.size === 0)) {
         container.innerHTML = '<div style="padding:12px 14px;color:#aaa;font-size:12px">暂无标签</div>';
         return;
     }
@@ -1049,10 +1150,9 @@ function renderTagList() {
     // 有分组的标签
     Object.keys(groups).sort().forEach(groupName => {
         const collapsed = state.collapsedGroups.has(groupName) ? 'collapsed' : '';
-        const arrow = state.collapsedGroups.has(groupName) ? '▶' : '▼';
         html += `
             <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
-                <span class="group-arrow">${arrow}</span>
+                <span class="group-arrow ${collapsed}"><svg viewBox="0 0 10 10" width="10" height="10"><path d="M3 1 L9 5 L3 9 Z" fill="currentColor"/></svg></span>
                 <span class="group-name">${escapeHtml(groupName)}</span>
                 
             </div>
@@ -1063,13 +1163,25 @@ function renderTagList() {
         html += `</div>`;
     });
 
+    // 本地新建但尚未持久化的空分组（renderTagList 重渲染时保留）
+    Array.from(state.localGroups || []).sort().forEach(groupName => {
+        if (groups[groupName]) return; // 已有同名数据库分组，跳过
+        const collapsed = state.collapsedGroups.has(groupName) ? 'collapsed' : '';
+        html += `
+            <div class="tag-group-header" data-group="${escapeHtml(groupName)}">
+                <span class="group-arrow ${collapsed}"><svg viewBox="0 0 10 10" width="10" height="10"><path d="M3 1 L9 5 L3 9 Z" fill="currentColor"/></svg></span>
+                <span class="group-name">${escapeHtml(groupName)}</span>
+                
+            </div>
+            <div class="tag-group-body ${collapsed}"></div>`;
+    });
+
     // 未分组的标签
     if (ungrouped.length > 0) {
         const collapsed = state.collapsedGroups.has('__ungrouped__') ? 'collapsed' : '';
-        const arrow = state.collapsedGroups.has('__ungrouped__') ? '▶' : '▼';
         html += `
             <div class="tag-group-header" data-group="__ungrouped__">
-                <span class="group-arrow">${arrow}</span>
+                <span class="group-arrow ${collapsed}"><svg viewBox="0 0 10 10" width="10" height="10"><path d="M3 1 L9 5 L3 9 Z" fill="currentColor"/></svg></span>
                 <span class="group-name">未分组</span>
                 
             </div>
@@ -1119,58 +1231,7 @@ function renderTagList() {
         item.addEventListener('dragend', () => item.classList.remove('dragging'));
     });
 
-    // 拖拽放置目标（分组头和标签列表区域）
-    container.querySelectorAll('.tag-group-header').forEach(header => {
-        header.addEventListener('dragover', (e) => { e.preventDefault(); header.classList.add('drag-over'); });
-        header.addEventListener('dragleave', () => header.classList.remove('drag-over'));
-        header.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            header.classList.remove('drag-over');
-            const tagId = parseInt(e.dataTransfer.getData('text/plain'));
-            const group = header.dataset.group;
-            const newGroup = group === '__ungrouped__' ? '' : group;
-            try {
-                await go.main.App.SetTagGroup(tagId, newGroup);
-                await refreshTags();
-            } catch (err) { showToast('移动标签失败: ' + err, 'error'); }
-        });
-    });
-
-    // 右键菜单
-    container.addEventListener('contextmenu', (e) => {
-        if (e.target.closest('.tag-item') || e.target.closest('.tag-group-header')) return;
-        e.preventDefault();
-        // 直接插入一个可编辑的分组头
-        const container = document.getElementById('tag-list');
-        const header = document.createElement('div');
-        header.className = 'tag-group-header';
-        header.innerHTML = '<span class="group-arrow">▼</span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" />';
-        const clicked = e.target.closest('.tag-item, .tag-group-header');
-        if (clicked && clicked.nextSibling) {
-            clicked.parentNode.insertBefore(header, clicked.nextSibling);
-        } else {
-            container.appendChild(header);
-        }
-        const input = header.querySelector('input');
-        input.focus();
-        function confirm() {
-            const name = input.value.trim();
-            if (!name) { header.remove(); return; }
-            header.innerHTML = '<span class="group-arrow">▼</span><span class="group-name">' + name + '</span>';
-            header.dataset.group = name;
-            // 重新绑定点击折叠事件
-            header.addEventListener('click', function() {
-                const body = this.nextElementSibling;
-                if (body && body.classList.contains('tag-group-body')) {
-                    body.classList.toggle('collapsed');
-                    this.querySelector('.group-arrow').textContent = body.classList.contains('collapsed') ? '▶' : '▼';
-                }
-            });
-            showToast('分组「' + name + '」已创建，拖拽标签即可移入');
-        }
-        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') header.remove(); });
-        input.addEventListener('blur', () => setTimeout(() => { if (!header.contains(document.activeElement)) confirm(); }, 200));
-    });
+    // 拖拽放置目标改为 bindEvents 中的容器级事件委托（新建分组头同样生效）
 }
 
 function renderTagItem(tag) {
@@ -1207,21 +1268,53 @@ async function selectDocument(docId) {
     catch (err) { console.error('获取文档详情失败:', err); }
 }
 
+// 将文本截断到最多 maxLines 行，超出以省略号结尾（二分查找，避免依赖 line-clamp 兼容性）
+function clampTextToLines(el, text, maxLines) {
+    el.textContent = text;
+    const cs = getComputedStyle(el);
+    const lineH = parseFloat(cs.lineHeight);
+    const padTop = parseFloat(cs.paddingTop) || 0;
+    const maxContentH = lineH * maxLines;
+    if (el.scrollHeight - padTop <= maxContentH + 1) return;  // 未溢出
+    let lo = 0, hi = text.length;
+    while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        el.textContent = text.slice(0, mid) + '…';
+        if (el.scrollHeight - padTop <= maxContentH + 1) lo = mid; else hi = mid - 1;
+    }
+    el.textContent = text.slice(0, lo) + '…';
+    // 兜底：逐字减少（处理末尾宽字符测量误差）
+    while (lo > 0 && el.scrollHeight - padTop > maxContentH + 1) {
+        lo--;
+        el.textContent = text.slice(0, lo) + '…';
+    }
+}
+
 function renderDetail(doc) {
     document.getElementById('detail-empty').style.display = 'none';
     document.getElementById('detail-content').style.display = 'block';
 
-    document.getElementById('detail-filename').innerHTML = `${fileIconHtml(doc.file_type)} ${escapeHtml(doc.filename)}`;
-    document.getElementById('detail-path').textContent = doc.path;
+    document.getElementById('detail-icon').innerHTML = fileIconHtml(doc.file_type);
+    const fnEl = document.getElementById('detail-filename');
+    const pathEl = document.getElementById('detail-path');
+    clampTextToLines(fnEl, doc.filename, 2);
+    clampTextToLines(pathEl, doc.path, 2);
+    fnEl.title = doc.filename;   // 悬停查看完整文件名
+    pathEl.title = doc.path;     // 悬停查看完整路径
 
     const tagContainer = document.getElementById('detail-tags');
+    const moreBtn = document.getElementById('tags-more-btn');
     const currentTagIds = new Set();
+
+    // 渲染已有标签
+    let tagCount = 0;
     if (doc.tags && doc.tags.length > 0) {
         tagContainer.innerHTML = doc.tags.map(t => {
             currentTagIds.add(t.id);
             const color = getTagColor(t);
             return `<span class="detail-tag" style="background:${color}20;color:${color};border-color:${color}40">${escapeHtml(t.name)}<span class="remove-tag" data-tag-id="${t.id}" title="移除" style="color:${color}">×</span></span>`;
         }).join('');
+        tagCount = doc.tags.length;
         tagContainer.querySelectorAll('.remove-tag').forEach(el => {
             el.addEventListener('click', async () => {
                 await go.main.App.RemoveTagFromDocument(doc.id, parseInt(el.dataset.tagId));
@@ -1233,6 +1326,34 @@ function renderDetail(doc) {
         });
     } else {
         tagContainer.innerHTML = '<span style="color:#aaa;font-size:12px">暂无标签</span>';
+    }
+    tagContainer.appendChild(moreBtn);   // innerHTML 会清掉容器内按钮，重新挂回
+
+    // 标签区固定预留两行；超过两行折叠，「展开」浮在第二行末尾；展开后「折叠」浮在最后一行末尾
+    const rowH = tagCount > 0 ? tagContainer.querySelector('.detail-tag').offsetHeight : 22;
+    const twoLineH = rowH * 2 + 4;   // 两行内容高度（gap 4px）
+    tagContainer.style.minHeight = twoLineH + 'px';
+    tagContainer.dataset.expanded = '0';
+    const totalH = tagContainer.scrollHeight;
+    if (tagCount > 0 && totalH > twoLineH + 1) {
+        tagContainer.style.maxHeight = twoLineH + 'px';
+        moreBtn.textContent = '展开';
+        moreBtn.style.visibility = 'visible';
+        moreBtn.onclick = () => {
+            if (tagContainer.dataset.expanded === '1') {
+                tagContainer.style.maxHeight = twoLineH + 'px';
+                moreBtn.textContent = '展开';
+                tagContainer.dataset.expanded = '0';
+            } else {
+                tagContainer.style.maxHeight = 'none';
+                moreBtn.textContent = '折叠';
+                tagContainer.dataset.expanded = '1';
+            }
+        };
+    } else {
+        tagContainer.style.maxHeight = '';
+        moreBtn.style.visibility = 'hidden';
+        moreBtn.onclick = null;
     }
 
     const availableContainer = document.getElementById('available-tags');
@@ -1314,6 +1435,7 @@ async function handleAddTag() {
         input.value = '';
         hideAutocomplete();
         refreshFileTypeCounts();
+        await refreshTags();  // 新建标签后刷新左侧标签栏（新标签 tag_group 为空，默认归入「未分组」）
     } catch (err) { showToast('添加标签失败: ' + err, 'error'); }
 }
 

@@ -44,7 +44,7 @@
         <div id="tag-list"></div>
         <div class="sidebar-footer">
             <button id="btn-settings" class="btn-settings-link"><span class="settings-icon"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97 0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1 0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.98l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66z"/></svg></span> 设置</button>
-            <span class="version-label">v0.2.0</span>
+            <span class="version-label">v0.3.0</span>
         </div>
     </aside>
 
@@ -78,8 +78,13 @@
                 <p>👈 选择一个文件查看详情</p>
             </div>
             <div id="detail-content" style="display:none">
-                <h3 id="detail-filename"></h3>
-                <p id="detail-path" class="detail-path"></p>
+                <div id="detail-header">
+                    <div id="detail-icon"></div>
+                    <div id="detail-info">
+                        <h3 id="detail-filename"></h3>
+                        <p id="detail-path" class="detail-path"></p>
+                    </div>
+                </div>
                 <div class="detail-actions">
                     <button id="btn-open-file" class="btn btn-sm" style="width:80px"><img src="src/icons/doc-detail.svg" style="width:14px;height:14px;vertical-align:middle;margin-right:2px" /> 打开文件</button>
                     <button id="btn-open-dir" class="btn btn-sm" style="width:80px"><img src="src/icons/folder-open.svg" style="width:14px;height:14px;vertical-align:middle;margin-right:2px" /> 打开目录</button>
@@ -87,7 +92,7 @@
                 </div>
                 <div class="detail-section">
                     <h4>标签</h4>
-                    <div id="detail-tags"></div>
+                    <div id="detail-tags"><button id="tags-more-btn" class="tags-more-btn" style="visibility:hidden">更多</button></div>
                     <div class="tag-input-row">
                         <input type="text" id="tag-input" placeholder="输入新标签..." />
                     </div>
