@@ -22,6 +22,7 @@ let state = {
     selectedDocId: null,
     selectedDocIds: new Set(),      // 复选框选中
     multiSelectedIds: new Set(),    // Shift/Ctrl 多选（独立于复选框）
+    docOpMode: 'single',            // 右侧操作模式：single=单个，batch=批量（操作复选框选中的文件）
     lastClickedIndex: -1,  // Shift 多选用
     currentFolderPath: '',  // 当前选择的文件夹路径
     activeTagIds: [],
@@ -747,6 +748,7 @@ function bindEvents() {
     document.getElementById('btn-search-exact').addEventListener('click', toggleSearchMode);
     document.getElementById('btn-clear-filter').addEventListener('click', clearTagFilter);
     document.getElementById('btn-tag-mode').addEventListener('click', toggleTagMatchMode);
+    document.getElementById('btn-op-mode').addEventListener('click', toggleDocOperationMode);
     document.getElementById('btn-open-file').addEventListener('click', handleOpenFile);
     document.getElementById('btn-open-dir').addEventListener('click', handleOpenDir);
     document.getElementById('btn-remove-doc').addEventListener('click', handleRemoveDoc);
@@ -1350,11 +1352,22 @@ function renderDetail(doc) {
         tagCount = doc.tags.length;
         tagContainer.querySelectorAll('.remove-tag').forEach(el => {
             el.addEventListener('click', async () => {
-                await go.main.App.RemoveTagFromDocument(doc.id, parseInt(el.dataset.tagId));
-                delete state.tagCache[doc.id];
-                await selectDocument(doc.id);
-                await refreshTags();
-                await refreshFileTypeCounts();
+                const tagId = parseInt(el.dataset.tagId);
+                try {
+                    if (state.docOpMode === 'batch' && state.multiSelectedIds.size > 0) {
+                        // 批量模式：从复选框选中的全部文件移除该标签
+                        const ids = Array.from(state.multiSelectedIds);
+                        await go.main.App.BatchRemoveTagFromDocuments(ids, tagId);
+                        ids.forEach(id => delete state.tagCache[id]);
+                    } else {
+                        await go.main.App.RemoveTagFromDocument(doc.id, tagId);
+                        delete state.tagCache[doc.id];
+                        await selectDocument(doc.id);
+                    }
+                    await refreshTags();
+                    await refreshFileTypeCounts();
+                    await refreshDocuments();
+                } catch (err) { showToast('移除标签失败: ' + err, 'error'); }
             });
         });
     } else {
@@ -1400,19 +1413,25 @@ function renderDetail(doc) {
             el.addEventListener('click', async () => {
                 const tagName = el.dataset.tagName;
                 let targetIds;
-                if (state.multiSelectedIds.size > 0) {
+                if (state.docOpMode === 'batch' && state.multiSelectedIds.size > 0) {
                     targetIds = Array.from(state.multiSelectedIds);
                 } else {
                     targetIds = [doc.id];
                 }
                 await go.main.App.BatchAddTag(targetIds, tagName);
                 targetIds.forEach(id => delete state.tagCache[id]);
+                // 增量更新标签显示，不重渲染列表（避免中间栏闪烁跳动）
+                targetIds.forEach(id => {
+                    go.main.App.GetDocument(id).then(d => {
+                        const tagsHtml = (d.tags || []).map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)};border-color:${getTagColor(t)}40">${escapeHtml(t.name)}</span>`).join('');
+                        state.tagCache[id] = tagsHtml;
+                        const fileEl = document.getElementById('file-tags-' + id);
+                        if (fileEl) fileEl.innerHTML = tagsHtml;
+                        if (id === state.selectedDocId) renderDetail(d);
+                    }).catch(() => {});
+                });
                 await refreshTags();
-                await refreshDocuments();
                 await refreshFileTypeCounts();
-                if (targetIds.length === 1 && targetIds[0] === doc.id) {
-                    await selectDocument(doc.id);
-                }
             });
         });
     } else {
@@ -1424,8 +1443,14 @@ function renderDetail(doc) {
 async function handleRemoveDoc() {
     if (!state.selectedDocId) return;
     try {
-        await go.main.App.RemoveDocument(state.selectedDocId);
-        state.selectedDocId = null;
+        if (state.docOpMode === 'batch' && state.multiSelectedIds.size > 0) {
+            // 批量模式：移除复选框选中的全部文件
+            await go.main.App.RemoveDocuments(Array.from(state.multiSelectedIds));
+            state.multiSelectedIds.clear();
+        } else {
+            await go.main.App.RemoveDocument(state.selectedDocId);
+            state.selectedDocId = null;
+        }
         document.getElementById('detail-empty').style.display = 'flex';
         document.getElementById('detail-content').style.display = 'none';
         await refreshDocuments();
@@ -1442,9 +1467,9 @@ async function handleAddTag() {
     const tagName = input.value.trim();
     if (!tagName) return;
 
-    // 统一收集目标文件ID：多选优先，否则取当前查看的文件
+    // 收集目标文件ID：批量模式多选优先，单个模式取当前查看的文件
     let targetIds;
-    if (state.multiSelectedIds.size > 0) {
+    if (state.docOpMode === 'batch' && state.multiSelectedIds.size > 0) {
         targetIds = Array.from(state.multiSelectedIds);
     } else if (state.selectedDocId) {
         targetIds = [state.selectedDocId];
@@ -1541,6 +1566,12 @@ function toggleTagMatchMode() {
     state.tagMatchMode = state.tagMatchMode === 'union' ? 'intersection' : 'union';
     setModeIndicator(document.getElementById('btn-tag-mode'), state.tagMatchMode === 'union');
     if (state.activeTagIds.length > 0) refreshDocuments();
+}
+
+// ========== 操作模式切换（单个/批量） ==========
+function toggleDocOperationMode() {
+    state.docOpMode = state.docOpMode === 'single' ? 'batch' : 'single';
+    setModeIndicator(document.getElementById('btn-op-mode'), state.docOpMode === 'single');
 }
 
 // ========== 标签颜色选择 ==========

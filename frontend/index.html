@@ -23,6 +23,11 @@
                 <option value="2">3 层</option>
                 <option value="-1">全部层级</option>
             </select>
+            <button id="btn-op-mode" class="btn btn-sm mode-toggle" title="操作模式：左侧=单个，右侧=批量">
+                <span class="mode-dot left on"></span>
+                <span class="mode-label"><span class="opt-left opt-active">单个</span> | <span class="opt-right">批量</span></span>
+                <span class="mode-dot right"></span>
+            </button>
             <button id="btn-view-list" class="btn btn-icon active" data-tip="列表视图"><img src="src/icons/list.svg" style="width:16px;height:16px" /></button>
             <button id="btn-view-graph" class="btn btn-icon" data-tip="网络图谱">🕸️</button>
             <span id="doc-count" class="doc-count"></span>
