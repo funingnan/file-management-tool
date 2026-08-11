@@ -32,7 +32,7 @@ func BenchmarkScanFolder_100(b *testing.B) {
 	enabledTypes := []string{"pdf", "docx", "image", "video"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = ScanFolder(dir, enabledTypes)
+		_, _ = ScanFolder(dir, enabledTypes, -1)
 	}
 }
 
@@ -41,7 +41,7 @@ func BenchmarkScanFolder_1000(b *testing.B) {
 	enabledTypes := []string{"pdf", "docx", "image", "video"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = ScanFolder(dir, enabledTypes)
+		_, _ = ScanFolder(dir, enabledTypes, -1)
 	}
 }
 
@@ -50,6 +50,6 @@ func BenchmarkScanFolder_3000(b *testing.B) {
 	enabledTypes := []string{"pdf", "docx", "image", "video"}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = ScanFolder(dir, enabledTypes)
+		_, _ = ScanFolder(dir, enabledTypes, -1)
 	}
 }

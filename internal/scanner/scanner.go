@@ -69,9 +69,10 @@ type ScanResult struct {
 	ModTime  time.Time
 }
 
-// ScanFolder 递归扫描文件夹中支持的文件类型
+// ScanFolder 扫描文件夹中支持的文件类型
 // enabledTypes: 启用的类型列表如 ["pdf","docx","xlsx","pptx","image","video"]
-func ScanFolder(folderPath string, enabledTypes []string) ([]ScanResult, error) {
+// maxDepth: 扫描层级深度。-1=全部层级(递归)，0=仅当前目录，1=当前+一层子目录，以此类推
+func ScanFolder(folderPath string, enabledTypes []string, maxDepth int) ([]ScanResult, error) {
 	extMap := buildExtMap(enabledTypes)
 	var results []ScanResult
 
@@ -86,6 +87,16 @@ func ScanFolder(folderPath string, enabledTypes []string) ([]ScanResult, error) 
 			return nil
 		}
 		if d.IsDir() {
+			// 深度剪枝：限制递归层级（maxDepth >= 0 时生效）
+			if maxDepth >= 0 && path != absFolderPath {
+				rel, relErr := filepath.Rel(absFolderPath, path)
+				if relErr == nil {
+					depth := strings.Count(rel, string(filepath.Separator))
+					if depth >= maxDepth {
+						return fs.SkipDir
+					}
+				}
+			}
 			return nil
 		}
 

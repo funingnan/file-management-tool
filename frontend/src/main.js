@@ -35,7 +35,7 @@ let state = {
     graphNetwork: null,
     allTags: [],
     localGroups: new Set(),  // 前端本地新建、尚未持久化的空分组名
-    settings: { enabledTypes: ['pdf','docx','xlsx','pptx'] },
+    settings: { enabledTypes: ['pdf','docx','xlsx','pptx'], scanDepth: -1 },
     tagCache: {},  // docId → tags HTML 缓存
 };
 
@@ -57,6 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await refreshFileTypeCounts();
     await updateDocCount();
     bindEvents();
+    // 恢复上次的扫描层级选择
+    const depthSel = document.getElementById('scan-depth');
+    if (depthSel && state.settings.scanDepth !== undefined) depthSel.value = String(state.settings.scanDepth);
+    depthSel.addEventListener('change', () => { state.settings.scanDepth = parseInt(depthSel.value); saveSettings(); });
     // 网络图谱为实验功能，暂隐藏入口（代码保留，后续测试调整好再开放）
     document.getElementById('btn-view-graph').style.display = 'none';
 
@@ -396,6 +400,15 @@ async function saveSettings() {
 
 // 版本历史数据
 const VERSION_HISTORY = [
+    {
+        version: 'v0.3.1',
+        date: '2026-08-11',
+        changes: [
+            '新增扫描层级控制：全部层级 / 3 层 / 2 层 / 1 层 / 仅当前目录',
+            '支持增量扫描精确控制：已入库文件永久保留，按层级只新增指定深度内的新文件',
+            '扫描层级选择自动记住，下次打开应用沿用上次选择',
+        ]
+    },
     {
         version: 'v0.3.0',
         date: '2026-08-10',
@@ -892,12 +905,19 @@ async function refreshFileTypeCounts() {
 }
 
 // ========== 扫描 ==========
+// 当前选择的扫描层级（-1=全部层级）
+function getScanDepth() {
+    const sel = document.getElementById('scan-depth');
+    if (sel && sel.value !== '') return parseInt(sel.value);
+    return state.settings.scanDepth !== undefined ? state.settings.scanDepth : -1;
+}
+
 async function handleScan() {
     const folder = await go.main.App.SelectFolder();
     if (!folder) return;
 
     try {
-        const result = await go.main.App.ScanFolder(folder, state.settings.enabledTypes);
+        const result = await go.main.App.ScanFolder(folder, state.settings.enabledTypes, getScanDepth());
         await refreshDocuments();
         await refreshTags();
         await refreshFileTypeCounts();
@@ -918,7 +938,7 @@ async function handleSelectFolder() {
 
     try {
         // 先扫描索引该文件夹
-        await go.main.App.ScanFolder(folder, state.settings.enabledTypes);
+        await go.main.App.ScanFolder(folder, state.settings.enabledTypes, getScanDepth());
         // 存储路径，切换到文件夹筛选
         state.currentFolderPath = folder;
         state.settings.currentFolderPath = folder;

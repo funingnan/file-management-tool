@@ -115,8 +115,9 @@ type ScanFolderResult struct {
 }
 
 // ScanFolder 扫描指定文件夹，将文件索引到数据库
-func (a *App) ScanFolder(folderPath string, enabledTypes []string) (*ScanFolderResult, error) {
-	results, err := scanner.ScanFolder(folderPath, enabledTypes)
+// maxDepth: 扫描层级。-1=全部层级，0=仅当前目录，1=当前+一层子目录
+func (a *App) ScanFolder(folderPath string, enabledTypes []string, maxDepth int) (*ScanFolderResult, error) {
+	results, err := scanner.ScanFolder(folderPath, enabledTypes, maxDepth)
 	if err != nil {
 		return nil, fmt.Errorf("扫描失败: %w", err)
 	}
@@ -320,12 +321,14 @@ func (a *App) OpenFileLocation(docID int64) error {
 type Settings struct {
 	EnabledTypes     []string `json:"enabledTypes"`      // 启用的文件类型
 	CurrentFolderPath string   `json:"currentFolderPath"` // 当前选择的文件夹路径
+	ScanDepth        int      `json:"scanDepth"`         // 扫描层级：-1=全部，0=仅当前目录，1=一层…
 }
 
 // 默认设置
 var defaultSettings = Settings{
 	EnabledTypes:     []string{"pdf", "docx", "xlsx", "pptx"},
 	CurrentFolderPath: "",
+	ScanDepth:        -1,
 }
 
 // GetSettings 获取当前设置

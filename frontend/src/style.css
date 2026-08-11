@@ -102,6 +102,36 @@ body {
     color: var(--text-light);
 }
 
+/* 扫描层级控件：容器从分隔线(中间栏/右侧栏交界)延伸到窗口右缘；下拉左边缘对齐分隔线，
+   列表/图谱按钮与文件数保持右侧原位置（右缘） */
+.toolbar-depth {
+    width: 286px;
+    min-width: 286px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.toolbar-depth #btn-view-list {
+    margin-left: auto;   /* 按钮组贴右缘，恢复原位置 */
+}
+
+#scan-depth {
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg-white);
+    outline: none;
+    cursor: pointer;
+    max-width: 110px;
+}
+
+#scan-depth:hover { border-color: var(--primary); }
+
 /* ========== 按钮 ========== */
 .btn {
     display: inline-flex;
