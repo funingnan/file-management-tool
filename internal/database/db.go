@@ -374,6 +374,15 @@ func (db *DB) RenameTagGroup(oldGroup, newGroup string) error {
 	return err
 }
 
+// ClearTagGroup 清空分组：将该分组下所有标签移出（tag_group 置空，回到未分组）
+func (db *DB) ClearTagGroup(group string) error {
+	if group == "" {
+		return nil
+	}
+	_, err := db.conn.Exec(`UPDATE tags SET tag_group = '' WHERE tag_group = ?`, group)
+	return err
+}
+
 // ListTags 列出所有标签及使用次数
 func (db *DB) ListTags() ([]TagWithCount, error) {
 	rows, err := db.conn.Query(`

@@ -1476,6 +1476,8 @@ body {
     white-space: nowrap;
 }
 .context-menu-item:hover { background: #e8eff8; }
+.context-menu-item.danger { color: #e74c3c; }
+.context-menu-item.danger:hover { background: #fdecea; }
 
 /* 拖拽中的标签 */
 .tag-item.dragging { opacity: 0.4; }

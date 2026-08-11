@@ -300,6 +300,11 @@ func (a *App) RenameTagGroup(oldGroup, newGroup string) error {
 	return a.db.RenameTagGroup(oldGroup, newGroup)
 }
 
+// ClearTagGroup 删除标签分组（分组下所有标签回到未分组）
+func (a *App) ClearTagGroup(group string) error {
+	return a.db.ClearTagGroup(group)
+}
+
 // ---------- 系统操作 ----------
 
 // OpenFile 用系统默认程序打开 PDF 文件

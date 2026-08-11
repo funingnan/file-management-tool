@@ -760,28 +760,35 @@ function bindEvents() {
     document.getElementById('btn-modal-close').addEventListener('click', () => { hideModal(); document.getElementById('btn-settings').blur(); });
     document.getElementById('btn-settings').addEventListener('click', showSettingsModal);
 
-    // 标签列表空白处右键 → 新建分组（事件委托，一次性绑定，避免 renderTagList 重复绑定累积）
+    // 标签列表右键：分组头 → 删除分组菜单；空白处 → 新建分组（事件委托，一次性绑定）
     document.getElementById('tag-list').addEventListener('contextmenu', (e) => {
-        if (e.target.closest('.tag-item, .tag-group-header, .tag-group-input')) return;
+        const header = e.target.closest('.tag-group-header');
+        if (header) {
+            e.preventDefault();
+            const group = header.dataset.group;
+            if (group && group !== '__ungrouped__') showGroupContextMenu(e.clientX, e.clientY, group);
+            return;
+        }
+        if (e.target.closest('.tag-item, .tag-group-input')) return;
         e.preventDefault();
         // 直接插入一个可编辑的分组头
         const container = document.getElementById('tag-list');
-        const header = document.createElement('div');
-        header.className = 'tag-group-header';
-        header.innerHTML = '<span class="group-arrow"><svg viewBox="0 0 10 10" width="10" height="10"><path d="M3 1 L9 5 L3 9 Z" fill="currentColor"/></svg></span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" />';
-        container.appendChild(header);
-        const input = header.querySelector('input');
+        const newHeader = document.createElement('div');
+        newHeader.className = 'tag-group-header';
+        newHeader.innerHTML = '<span class="group-arrow"><svg viewBox="0 0 10 10" width="10" height="10"><path d="M3 1 L9 5 L3 9 Z" fill="currentColor"/></svg></span><input type="text" class="tag-group-input" placeholder="输入分组名称..." style="flex:1;height:22px;font-size:12px;font-weight:600;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;background:transparent" />';
+        container.appendChild(newHeader);
+        const input = newHeader.querySelector('input');
         input.focus();
         function confirm() {
             const name = input.value.trim();
-            if (!name) { header.remove(); return; }
+            if (!name) { newHeader.remove(); return; }
             // 存入本地分组，由 renderTagList 统一渲染（重渲染不丢失，且自动获得折叠/拖拽事件）
             state.localGroups.add(name);
             renderTagList();
             showToast('分组「' + name + '」已创建，拖拽标签即可移入');
         }
-        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') header.remove(); });
-        input.addEventListener('blur', () => setTimeout(() => { if (!header.contains(document.activeElement)) confirm(); }, 200));
+        input.addEventListener('keydown', (e2) => { if (e2.key === 'Enter') confirm(); if (e2.key === 'Escape') newHeader.remove(); });
+        input.addEventListener('blur', () => setTimeout(() => { if (!newHeader.contains(document.activeElement)) confirm(); }, 200));
     });
 
     // 标签拖入分组（事件委托，一次性绑定，动态新建的分组头也自动生效）
@@ -1767,6 +1774,44 @@ function startGroupRename(groupName) {
         if (e.key === 'Enter') input.blur();
         if (e.key === 'Escape') restore();
     });
+}
+
+// ========== 分组右键菜单（删除标签组） ==========
+function showGroupContextMenu(x, y, group) {
+    hideGroupContextMenu();
+    const menu = document.createElement('div');
+    menu.className = 'tag-context-menu';
+    menu.style.cssText = 'position:fixed;z-index:10000;';
+    menu.innerHTML = `<div class="context-menu-item danger" data-action="delete-group">删除标签组「${escapeHtml(group)}」</div>`;
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    document.body.appendChild(menu);
+
+    menu.querySelector('[data-action="delete-group"]').addEventListener('click', async () => {
+        hideGroupContextMenu();
+        if (state.localGroups.has(group)) {
+            // 本地新建的空分组：无数据库记录，直接移除
+            state.localGroups.delete(group);
+            renderTagList();
+            showToast('已删除分组');
+            return;
+        }
+        try {
+            await go.main.App.ClearTagGroup(group);
+            state.collapsedGroups.delete(group);
+            await refreshTags();
+            showToast('分组已删除，标签已回到未分组');
+        } catch (err) { showToast('删除分组失败: ' + err, 'error'); }
+    });
+
+    // 点击其他地方 / 滚动时关闭菜单
+    setTimeout(() => {
+        document.addEventListener('click', hideGroupContextMenu, { once: true });
+    }, 0);
+}
+
+function hideGroupContextMenu() {
+    document.querySelectorAll('.tag-context-menu').forEach(m => m.remove());
 }
 
 // ========== 打开文件 ==========
