@@ -168,11 +168,6 @@ body {
     padding-right: 12px;
 }
 
-/* 交集/并集按钮相对原位置右移 60px */
-#btn-tag-mode {
-    margin-left: 60px;
-}
-
 .mode-toggle .mode-dot {
     display: none;               /* 未选中的灯不显示 */
     position: absolute;
@@ -548,6 +543,12 @@ body {
 .panel-header h3 {
     font-size: 14px;
     font-weight: 600;
+}
+
+/* 标签面板标题保持横向（按钮右移后避免被挤压成竖排） */
+.tag-panel-header h3 {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 #tag-list {
