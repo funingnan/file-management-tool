@@ -966,11 +966,18 @@ async function handleSelectFolder() {
 }
 
 // ========== 搜索 ==========
+// 模式切换按钮亮灯：leftOn=true 亮左上灯，false 亮右上灯
+function setModeIndicator(btn, leftOn) {
+    if (!btn) return;
+    const l = btn.querySelector('.mode-dot.left');
+    const r = btn.querySelector('.mode-dot.right');
+    if (l) l.classList.toggle('on', leftOn);
+    if (r) r.classList.toggle('on', !leftOn);
+}
+
 function toggleSearchMode() {
     state.searchMode = state.searchMode === 'fuzzy' ? 'exact' : 'fuzzy';
-    const btn = document.getElementById('btn-search-exact');
-    btn.textContent = state.searchMode === 'fuzzy' ? '模糊' : '精确';
-    btn.classList.toggle('active', state.searchMode === 'exact');
+    setModeIndicator(document.getElementById('btn-search-exact'), state.searchMode === 'fuzzy');
     if (state.searchText) handleSearch();
 }
 
@@ -1528,9 +1535,7 @@ async function handleBatchRemoveDocs() {
 // ========== 标签匹配模式切换 ==========
 function toggleTagMatchMode() {
     state.tagMatchMode = state.tagMatchMode === 'union' ? 'intersection' : 'union';
-    const btn = document.getElementById('btn-tag-mode');
-    btn.textContent = state.tagMatchMode === 'union' ? '并集' : '交集';
-    btn.classList.toggle('active', state.tagMatchMode === 'intersection');
+    setModeIndicator(document.getElementById('btn-tag-mode'), state.tagMatchMode === 'union');
     if (state.activeTagIds.length > 0) refreshDocuments();
 }
 

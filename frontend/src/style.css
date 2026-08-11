@@ -159,6 +159,33 @@ body {
 }
 .btn-primary:hover { background: var(--primary-hover); }
 
+/* 模式切换按钮：同时显示两个选项，左右角亮灯指示当前选择 */
+.mode-toggle {
+    position: relative;
+    min-width: 100px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.mode-toggle .mode-dot {
+    position: absolute;
+    top: 2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid #ccc;
+    pointer-events: none;
+}
+
+.mode-toggle .mode-dot.left { left: 2px; }
+.mode-toggle .mode-dot.right { right: 2px; }
+
+.mode-toggle .mode-dot.on {
+    background: #4caf50;
+    border-color: #4caf50;
+}
+
 /* 路径选择按钮：已选路径状态圆点指示器 */
 #btn-select-folder { position: relative; }
 #btn-select-folder.has-path::after {
