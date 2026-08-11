@@ -966,13 +966,17 @@ async function handleSelectFolder() {
 }
 
 // ========== 搜索 ==========
-// 模式切换按钮亮灯：leftOn=true 亮左上灯，false 亮右上灯
+// 模式切换按钮亮灯：leftOn=true 亮左上灯，false 亮右上灯；同时选中侧文字变蓝
 function setModeIndicator(btn, leftOn) {
     if (!btn) return;
     const l = btn.querySelector('.mode-dot.left');
     const r = btn.querySelector('.mode-dot.right');
     if (l) l.classList.toggle('on', leftOn);
     if (r) r.classList.toggle('on', !leftOn);
+    const optL = btn.querySelector('.opt-left');
+    const optR = btn.querySelector('.opt-right');
+    if (optL) optL.classList.toggle('opt-active', leftOn);
+    if (optR) optR.classList.toggle('opt-active', !leftOn);
 }
 
 function toggleSearchMode() {

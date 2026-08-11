@@ -172,6 +172,22 @@ body {
     margin-left: 14px;
 }
 
+/* 清除按钮右移 10px（视觉平移，不推动其他元素） */
+#btn-clear-filter {
+    position: relative;
+    left: 10px;
+}
+
+/* 选项文字：选中侧变蓝 */
+.mode-toggle .opt-left,
+.mode-toggle .opt-right {
+    color: var(--text);
+}
+
+.mode-toggle .opt-active {
+    color: var(--primary);
+}
+
 .mode-toggle .mode-dot {
     display: none;               /* 未选中的灯不显示 */
     position: absolute;
