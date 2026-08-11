@@ -1353,20 +1353,29 @@ function renderDetail(doc) {
         tagContainer.querySelectorAll('.remove-tag').forEach(el => {
             el.addEventListener('click', async () => {
                 const tagId = parseInt(el.dataset.tagId);
+                let ids;
                 try {
                     if (state.docOpMode === 'batch' && state.multiSelectedIds.size > 0) {
                         // 批量模式：从复选框选中的全部文件移除该标签
-                        const ids = Array.from(state.multiSelectedIds);
+                        ids = Array.from(state.multiSelectedIds);
                         await go.main.App.BatchRemoveTagFromDocuments(ids, tagId);
-                        ids.forEach(id => delete state.tagCache[id]);
                     } else {
+                        ids = [doc.id];
                         await go.main.App.RemoveTagFromDocument(doc.id, tagId);
-                        delete state.tagCache[doc.id];
-                        await selectDocument(doc.id);
                     }
+                    ids.forEach(id => delete state.tagCache[id]);
+                    // 增量更新列表标签显示与详情（不重渲染列表，避免闪烁）
+                    ids.forEach(id => {
+                        go.main.App.GetDocument(id).then(d => {
+                            const tagsHtml = (d.tags || []).map(t => `<span class="file-tag" style="background:${getTagColor(t)}20;color:${getTagColor(t)};border-color:${getTagColor(t)}40">${escapeHtml(t.name)}</span>`).join('');
+                            state.tagCache[id] = tagsHtml;
+                            const fileEl = document.getElementById('file-tags-' + id);
+                            if (fileEl) fileEl.innerHTML = tagsHtml;
+                            if (id === state.selectedDocId) renderDetail(d);   // 刷新右侧详情（含已有标签）
+                        }).catch(() => {});
+                    });
                     await refreshTags();
                     await refreshFileTypeCounts();
-                    await refreshDocuments();
                 } catch (err) { showToast('移除标签失败: ' + err, 'error'); }
             });
         });
