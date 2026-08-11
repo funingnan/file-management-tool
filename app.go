@@ -295,6 +295,11 @@ func (a *App) SetTagGroup(tagID int64, group string) error {
 	return a.db.SetTagGroup(tagID, group)
 }
 
+// RenameTagGroup 重命名标签分组（批量更新该分组下所有标签）
+func (a *App) RenameTagGroup(oldGroup, newGroup string) error {
+	return a.db.RenameTagGroup(oldGroup, newGroup)
+}
+
 // ---------- 系统操作 ----------
 
 // OpenFile 用系统默认程序打开 PDF 文件

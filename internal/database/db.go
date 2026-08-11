@@ -365,6 +365,15 @@ func (db *DB) SetTagGroup(tagID int64, group string) error {
 	return err
 }
 
+// RenameTagGroup 重命名标签分组（批量更新该分组下所有标签的 tag_group）
+func (db *DB) RenameTagGroup(oldGroup, newGroup string) error {
+	if oldGroup == "" || newGroup == "" || oldGroup == newGroup {
+		return nil
+	}
+	_, err := db.conn.Exec(`UPDATE tags SET tag_group = ? WHERE tag_group = ?`, newGroup, oldGroup)
+	return err
+}
+
 // ListTags 列出所有标签及使用次数
 func (db *DB) ListTags() ([]TagWithCount, error) {
 	rows, err := db.conn.Query(`

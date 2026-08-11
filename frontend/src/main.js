@@ -1240,6 +1240,13 @@ function renderTagList() {
             }
             renderTagList();
         });
+        // 双击分组名 → 内联编辑（与标签改名一致）
+        header.addEventListener('dblclick', (e) => {
+            if (e.target.closest('input')) return;
+            const group = header.dataset.group;
+            if (!group || group === '__ungrouped__') return;
+            startGroupRename(group);
+        });
     });
 
     container.querySelectorAll('[data-tag-id]').forEach(item => {
@@ -1727,6 +1734,39 @@ function cancelInlineEdit(tagId) {
     const nameSpan = item.querySelector('.tag-name');
     if (nameSpan.dataset.origHtml) { nameSpan.innerHTML = nameSpan.dataset.origHtml; delete nameSpan.dataset.origHtml; }
     if (editingTagId === tagId) editingTagId = null;
+}
+
+// ========== 分组重命名（双击分组头内联编辑） ==========
+function startGroupRename(groupName) {
+    const header = document.querySelector(`.tag-group-header[data-group="${CSS.escape(groupName)}"]`);
+    if (!header) return;
+    const nameSpan = header.querySelector('.group-name');
+    if (!nameSpan) return;
+    nameSpan.dataset.origHtml = nameSpan.innerHTML;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tag-rename-input';
+    input.value = groupName;
+    input.style.cssText = `width:${Math.max(groupName.length * 8 + 20, 60)}px;height:17px;font-size:13px;padding:0 4px;border:1px solid var(--primary);border-radius:3px;outline:none;line-height:normal;vertical-align:middle`;
+    nameSpan.innerHTML = '';
+    nameSpan.appendChild(input);
+    input.focus();
+    input.select();
+
+    const restore = () => { if (nameSpan.dataset.origHtml) { nameSpan.innerHTML = nameSpan.dataset.origHtml; delete nameSpan.dataset.origHtml; } };
+    input.addEventListener('blur', async () => {
+        const newName = input.value.trim();
+        if (!newName || newName === groupName) { restore(); return; }
+        try {
+            await go.main.App.RenameTagGroup(groupName, newName);
+            await refreshTags();
+        } catch (err) { showToast('重命名分组失败: ' + err, 'error'); restore(); }
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') restore();
+    });
 }
 
 // ========== 打开文件 ==========
