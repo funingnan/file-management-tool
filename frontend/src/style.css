@@ -162,7 +162,6 @@ body {
 /* 模式切换按钮：同时显示两个选项，只亮选中侧角灯 */
 .mode-toggle {
     position: relative;
-    width: 80px;
     min-width: 80px;
     padding-left: 12px;
     padding-right: 12px;
