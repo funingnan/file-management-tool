@@ -18,6 +18,10 @@ export function BatchRemoveTagFromDocuments(arg1, arg2) {
   return window['go']['main']['App']['BatchRemoveTagFromDocuments'](arg1, arg2);
 }
 
+export function ClearTagGroup(arg1) {
+  return window['go']['main']['App']['ClearTagGroup'](arg1);
+}
+
 export function CloseTagPicker() {
   return window['go']['main']['App']['CloseTagPicker']();
 }
@@ -110,12 +114,16 @@ export function RenameTag(arg1, arg2) {
   return window['go']['main']['App']['RenameTag'](arg1, arg2);
 }
 
+export function RenameTagGroup(arg1, arg2) {
+  return window['go']['main']['App']['RenameTagGroup'](arg1, arg2);
+}
+
 export function SaveSettings(arg1) {
   return window['go']['main']['App']['SaveSettings'](arg1);
 }
 
-export function ScanFolder(arg1, arg2) {
-  return window['go']['main']['App']['ScanFolder'](arg1, arg2);
+export function ScanFolder(arg1, arg2, arg3) {
+  return window['go']['main']['App']['ScanFolder'](arg1, arg2, arg3);
 }
 
 export function SelectFolder() {

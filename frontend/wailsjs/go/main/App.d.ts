@@ -11,6 +11,8 @@ export function BatchAddTag(arg1:Array<number>,arg2:string):Promise<number>;
 
 export function BatchRemoveTagFromDocuments(arg1:Array<number>,arg2:number):Promise<number>;
 
+export function ClearTagGroup(arg1:string):Promise<void>;
+
 export function CloseTagPicker():Promise<void>;
 
 export function DeleteTag(arg1:number):Promise<void>;
@@ -57,9 +59,11 @@ export function RemoveTagFromFilePath(arg1:string,arg2:number):Promise<void>;
 
 export function RenameTag(arg1:number,arg2:string):Promise<void>;
 
+export function RenameTagGroup(arg1:string,arg2:string):Promise<void>;
+
 export function SaveSettings(arg1:main.Settings):Promise<void>;
 
-export function ScanFolder(arg1:string,arg2:Array<string>):Promise<main.ScanFolderResult>;
+export function ScanFolder(arg1:string,arg2:Array<string>,arg3:number):Promise<main.ScanFolderResult>;
 
 export function SelectFolder():Promise<string>;
 
